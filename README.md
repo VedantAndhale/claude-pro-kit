@@ -19,7 +19,7 @@ Thirteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) tha
 | **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
 | **turn-budget** | Asks before a single turn uses more than +5 session points, and stops that turn cleanly if you say so | Everywhere |
 | **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
-| **answer-pane** | Explanations as visual pages in a pane beside the chat, built by answer-me-with-html's renderer | Desktop app (text in the terminal) |
+| **answer-pane** | Explanations as visual pages in a pane beside the chat, diagrams drawn in place | Desktop app (text in the terminal) |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -215,12 +215,13 @@ README.md was changed by another chat 4 min ago (chat 7dc9d8a1 in mods). Edit it
 
 ## answer-pane
 
-A port of [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) (MIT, by its contributors) from a skill to a mod. When an answer needs a picture (a process, a comparison, a hierarchy, three or more linked ideas), Claude writes a short Markdown draft, and their renderer, bundled in `vendor/` with its license, turns it into a one-page explainer. The mod then shows that page in a pane beside the chat:
+When an answer needs a picture (a process, a comparison, a hierarchy, three or more linked ideas), Claude writes a short Markdown draft, and a bundled renderer turns it into a one-page explainer. The mod then shows that page in a pane beside the chat:
 
 - Claude sends the draft through a tool, not a Bash command, so there's no permission prompt and the draft isn't echoed into the transcript.
 - `flow` and `sequence` diagrams are drawn in the pane, in the page's own styles, light or dark. The other parts show as text. **Open in browser** (`o`) shows the full page.
 - If the renderer rejects a line, its exact fix goes back to Claude, which corrects the draft and tries again.
 - `/pages` lists this session's pages. Pages are saved under `~/.claude/answer-pane/`. Needs Node.js 20 or newer.
+- The renderer in `vendor/` is MIT-licensed; its license is in `vendor/`.
 
 What it costs, measured with your setup's prompt for "Reply with just OK.":
 

@@ -84,8 +84,8 @@
     {
       "name": "answer-pane",
       "source": "./plugins/answer-pane",
-      "description": "Explanations as visual pages in a pane beside the chat, built by answer-me-with-html (MIT): diagrams drawn in place, the full page one click away.",
-      "version": "0.1.0"
+      "description": "Explanations as visual pages in a pane beside the chat: diagrams drawn in place, the full page one click away.",
+      "version": "0.1.1"
     }
   ]
 }

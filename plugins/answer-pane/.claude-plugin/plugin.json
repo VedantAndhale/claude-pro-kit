@@ -1,7 +1,10 @@
 {
   "name": "answer-pane",
-  "version": "0.1.0",
-  "description": "Explanations as visual pages in a pane beside the chat, built by answer-me-with-html's renderer (MIT): diagrams drawn in place, the full page one click away. No model calls.",
-  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" },
+  "version": "0.1.1",
+  "description": "Explanations as visual pages in a pane beside the chat: diagrams drawn in place, the full page one click away. No model calls.",
+  "author": {
+    "name": "Vedant Andhale",
+    "url": "https://github.com/VedantAndhale"
+  },
   "types": "./types/index.d.ts"
 }

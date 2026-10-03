@@ -1,4 +1,4 @@
-// Turning an answer-me-with-html draft and the page its renderer built into
+// Turning a page draft and the page the renderer built from it into
 // what the pane draws. Pure, so the tests exercise it directly.
 
 export type Part = { kind: 'md'; text: string } | { kind: 'svg'; svg: string; label: string }

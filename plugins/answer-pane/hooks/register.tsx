@@ -4,8 +4,8 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { AnswerPage, AnswerView } from '../types'
 import { diagramStyle, extractSvgs, frontmatter, partsOf, renderedPath, slug, standaloneSvg } from './page'
 
-// Claude writes a short Markdown draft; answer-me-with-html's own renderer
-// (vendored, MIT, by its contributors) builds the page; the pane shows it
+// Claude writes a short Markdown draft; the bundled renderer in vendor/ (MIT,
+// license alongside) builds the page; the pane shows it
 // inside Claude Code, diagrams included, with the full page a click away.
 // No model calls: the draft is Claude's answer, the rest is local.
 
