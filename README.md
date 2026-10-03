@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Six small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt: every figure on screen is one Claude Code already reports, or a time the mod measured.
+Seven small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt: every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ Six small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that sho
 | **pro-hud** | Live meters above the prompt for your 5-hour session, your week and the context window, plus a per-turn receipt of tokens in, cached and out | Claude desktop app |
 | **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
+| **cache-clock** | Counts down until the prompt cache expires; once it has, shows exactly how many tokens your next message will re-send uncached | Everywhere |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -31,6 +32,7 @@ In Claude Code:
 /plugin install pro-hud@claude-pro-kit
 /plugin install output-diet@claude-pro-kit
 /plugin install reread-guard@claude-pro-kit
+/plugin install cache-clock@claude-pro-kit
 /plugin install kit-updates@claude-pro-kit
 ```
 
@@ -118,6 +120,25 @@ api.ts unchanged since you read it; use that copy. If it's gone from context, re
 ```
 
 The status line counts them: `2 re-reads skipped`.
+
+## cache-clock
+
+Claude's prompt cache keeps your conversation for a fixed time after each request. Reply within it and the context is read from cache; reply after it and the whole context is sent again at full price. That message pays the cache-write price (1.25 times the input price for a 5-minute cache, 2 times for a 1-hour one) on every token instead of the cache-read price (0.1 times): 12.5 to 20 times more for the same context, and nothing on screen says so.
+
+cache-clock puts the countdown in the status line, restarted by every response from the main conversation:
+
+```
+cache warm · 3m left
+cache cold · next message re-sends 61,204 tokens
+```
+
+When the cache runs out, a toast says so once. The token figure is the previous response's input, cache and output tokens as the API reported them, which is exactly what the next request sends. After a message that did go out uncached, a dim transcript line confirms the real figure:
+
+```
+cache-clock: cache expired after 7m 12s idle; this message re-sent 61,204 tokens uncached.
+```
+
+Claude Code does not report the cache's lifetime on a turn, so cache-clock learns it. Until it knows, it assumes 5 minutes and says `≥3m left` and `likely cold`. The first cache hit after more than 5 minutes idle proves a 1-hour cache, and a miss proves 5 minutes; the answer is kept across sessions. Subagents have their own cache and do not move the clock.
 
 ## kit-updates
 
