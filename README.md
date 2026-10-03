@@ -55,6 +55,8 @@ On that setup, the largest tool moved was `Artifact`, whose description alone is
 
 ## context-xray
 
+![The /xray pane: what is sent with every request, what loads on demand, memory files and listings](docs/context-xray.png)
+
 `/xray` opens a pane with the exact breakdown `/context` computes: what is sent with every request (system prompt, tools, MCP tools, memory files, skills, messages), what is loaded on demand, which MCP tools load every time, and each memory file's size. It measures when the pane opens and when you press Refresh (or `r`), never in the background, because the exact count sends one token-count request per tool and memory file.
 
 ## pro-hud
