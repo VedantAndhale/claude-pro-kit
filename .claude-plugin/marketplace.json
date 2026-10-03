@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.5.0"
+    "version": "0.3.0"
   },
   "plugins": [
     {
@@ -19,6 +19,12 @@
       "name": "output-diet",
       "source": "./plugins/output-diet",
       "description": "Trims long shell output before Claude reads it (head, tail and error lines kept); the untrimmed text is saved to a file Claude can open.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "turn-budget",
+      "source": "./plugins/turn-budget",
+      "description": "Asks before one turn uses more than +5 session points or 500,000 uncached input tokens, and stops it cleanly if you say so.",
       "version": "0.1.0"
     },
     {
