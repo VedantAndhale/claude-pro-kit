@@ -30,6 +30,8 @@ In Claude Code:
 /plugin install reread-guard@claude-pro-kit
 ```
 
+To get fixes and new mods as they ship, turn on auto-update once: `/plugin` → **Marketplaces** → `claude-pro-kit` → **Enable auto-update**. It is off by default for marketplaces you add yourself.
+
 Install any one on its own; they do not depend on each other. Mods are not sandboxed, so read the code before installing: each mod is a single file under `plugins/<name>/hooks/`.
 
 ## tool-diet
@@ -121,6 +123,8 @@ Each mod is a plugin folder under `plugins/`. To run them from a checkout, list 
 claude plugin validate plugins/pro-hud
 claude plugin test plugins/pro-hud
 ```
+
+Installed copies update only when a plugin's version changes, so bump `version` in its `plugin.json` (and its entry in `.claude-plugin/marketplace.json`) with every change you ship.
 
 ## License
 
