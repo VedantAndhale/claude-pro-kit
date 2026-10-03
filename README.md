@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Eleven small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Twelve small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -18,6 +18,7 @@ Eleven small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that 
 | **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
 | **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
 | **turn-budget** | Asks before a single turn uses more than +5 session points, and stops that turn cleanly if you say so | Everywhere |
+| **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -41,6 +42,7 @@ In Claude Code:
 /plugin install session-receipt@claude-pro-kit
 /plugin install budget-guard@claude-pro-kit
 /plugin install turn-budget@claude-pro-kit
+/plugin install collision-guard@claude-pro-kit
 /plugin install kit-updates@claude-pro-kit
 ```
 
@@ -192,6 +194,22 @@ This turn has used 6 points of your session (20% → 26%, limit +5) over 14 requ
 - Limits, whichever comes first: **+5 points** of the 5-hour session, or **500,000 uncached input tokens** for when the session meter lags behind. Cache reads aren't counted, since they cost a fraction of new input. Without a subscription there's no session reading, so only the token limit applies.
 - Anything but a clear Continue counts as Stop. A question nobody can answer (a `-p` run, or a dismissed dialog) never stops a turn; the status line notes it instead.
 - `/turn-budget` shows the limits, `/turn-budget 8` sets the points, `/turn-budget tokens 1000000` sets the token limit, and `/turn-budget off|on` switches it. Answers are toasts. While a turn runs, the status line reads `turn budget 3/5 pts`.
+
+## collision-guard
+
+Two Claude chats working in the same folder can edit the same file without knowing about each other. Before Claude edits a file (Edit, MultiEdit, Write, NotebookEdit), collision-guard checks whether another chat on this machine changed that file in the last 30 minutes, and asks first:
+
+```
+README.md was changed by another chat 4 min ago (chat 7dc9d8a1 in mods). Edit it anyway?
+  Proceed · Proceed for this file · Cancel
+```
+
+- **Proceed** lets this edit through and asks again next time. **Proceed for this file** stops asking about this file until the other chat changes it again. **Cancel** refuses the edit and tells Claude, in one line, to re-read the file and ask you how to proceed.
+- If something else changed the file after the other chat did (you in an editor, say), the question says "modified since".
+- Each chat records its own edits in its own small file under `~/.claude/collision-guard/`, so two chats never write the same file. Records older than the window are skipped without being read. The same file spelled differently (`D:/x` and `d:\x`) counts as one.
+- It only sees edits made through Claude's edit tools: a file changed by a shell command (`sed`, a formatter, `git checkout`) isn't recorded. It only knows about chats that have the mod. A chat in its own git worktree has its own copy of the files, so it never clashes.
+- Zero tokens unless you press Cancel. No model calls, no network. A question nobody can answer (a `-p` run) lets the edit through.
+- `/collisions` lists the files other chats changed here recently, `/collisions 15` sets the window in minutes, `/collisions off|on` switches it. Answers are toasts. The status line reads `1 other chat active here` while another chat is editing in the same folder.
 
 ## kit-updates
 
