@@ -80,7 +80,7 @@ describe('pro-hud band', () => {
     const ui = await $.ui.mount({ plugin: 'pro-hud', surface: 'desktop', component: 'AbovePrompt', props: band(140, true) })
     const live = await texts(ui)
     expect(live).toContain('This turn')
-    expect(live.join(' ')).toContain('1 tool  ·  1 file edited')
+    expect(live.join('')).toContain('1 tool  ·  1 file edited')
 
     await $.turn.complete({
       turnId: 't1',
@@ -92,10 +92,17 @@ describe('pro-hud band', () => {
     } as never)
     await $.session.measure(measure(21, 66))
 
-    const done = (await texts(ui)).join(' ')
+    const done = (await texts(ui)).join('')
     expect(done).toContain('Last turn')
     expect(done).toContain('17.2s  ·  1 tool  ·  1 file edited  ·  396,334 in  ·  395,101 cached  ·  686 out')
     expect(done).toContain('+1% session')
+
+    // A narrow band keeps every figure whole.
+    const narrow = await $.ui.mount({ plugin: 'pro-hud', surface: 'desktop', component: 'AbovePrompt', props: band(60) })
+    const parts = await texts(narrow)
+    for (const figure of ['396,334 in', '395,101 cached', '686 out', '+1% session']) {
+      expect(parts.some(t => t.endsWith(figure))).toBe(true)
+    }
   })
 
   test('shows the session points a turn used when the reading lands before the turn ends', async ($, on) => {

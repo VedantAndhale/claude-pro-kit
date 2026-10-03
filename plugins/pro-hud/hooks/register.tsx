@@ -328,15 +328,21 @@ export const register: Register = on => {
         <Box flexDirection={wide ? 'row' : 'column'}>{meters}</Box>
         {current && (
           <Box flexDirection="row">
-            <Box width={wide ? 9 : 10}>
+            <Box width={wide ? 9 : 10} flexShrink={0}>
               <Text dimColor={!live} color={live ? WARN : undefined}>{live ? 'This turn' : 'Last turn'}</Text>
             </Box>
-            <Text dimColor wrap="truncate-end">{parts.join('  ·  ')}</Text>
-            {fiveDelta !== undefined && (
-              <Text color={fiveDelta >= 5 ? WARN : undefined} dimColor={fiveDelta < 5}>
-                {`  ·  +${fiveDelta}% session`}
-              </Text>
-            )}
+            {/* Each figure is its own unit: a narrow band wraps whole figures to
+                the next line rather than cutting one off. */}
+            <Box flexDirection="row" flexWrap="wrap" flexShrink={1}>
+              {parts.map((part, i) => (
+                <Text key={`p${i}`} dimColor wrap="end">{`${i === 0 ? '' : '  ·  '}${part}`}</Text>
+              ))}
+              {fiveDelta !== undefined && (
+                <Text key="delta" color={fiveDelta >= 5 ? WARN : undefined} dimColor={fiveDelta < 5} wrap="end">
+                  {`  ·  +${fiveDelta}% session`}
+                </Text>
+              )}
+            </Box>
           </Box>
         )}
         {ctx.pct !== undefined && ctx.pct >= COMPACT_AT && (

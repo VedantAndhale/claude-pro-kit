@@ -1,6 +1,6 @@
 {
   "name": "pro-hud",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Desktop heads-up display for the Pro plan: exact 5h/7d usage gauges, context gauge, turn receipts, usage in the spinner and compact tool cards. No estimates, no tokens spent.",
   "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" },
   "types": "./types/index.d.ts"
