@@ -30,7 +30,7 @@ In Claude Code:
 /plugin install reread-guard@claude-pro-kit
 ```
 
-To get fixes and new mods as they ship, turn on auto-update once: `/plugin` → **Marketplaces** → `claude-pro-kit` → **Enable auto-update**. It is off by default for marketplaces you add yourself.
+To get fixes and new mods as they ship, turn on auto-update once: in a terminal, run `claude`, then `/plugin` → **Marketplaces** → `claude-pro-kit` → **Enable auto-update**. It is off by default for marketplaces you add yourself, and the desktop app has no toggle for it; `/plugin marketplace update claude-pro-kit` refreshes by hand from anywhere.
 
 Install any one on its own; they do not depend on each other. Mods are not sandboxed, so read the code before installing: each mod is a single file under `plugins/<name>/hooks/`.
 

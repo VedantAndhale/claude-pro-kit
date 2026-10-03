@@ -55,7 +55,8 @@ describe('context-xray', () => {
     const shown = await texts(ui)
 
     expect(shown).toContain('100,000 ')
-    expect(shown).toContain('of 1,000,000 tokens · 10% full')
+    expect(shown).toContain('of 1,000,000 tokens')
+    expect(shown).toContain(' · 10% full')
     expect(shown).toContain('Sent with every request')
     expect(shown).toContain('Messages')
     expect(shown).toContain('75,400')
@@ -63,8 +64,8 @@ describe('context-xray', () => {
     expect(shown).toContain('18,400')
     expect(shown).toContain('Loaded on demand')
     expect(shown).toContain('MCP tools (deferred)')
-    expect(shown).toContain('  2 loaded · 1 on demand')
-    expect(shown).toContain('mcp__browser__navigate')
+    expect(shown).toContain('2 loaded · 1 on demand')
+    expect(shown).toContain('browser · navigate')
     expect(shown).toContain('CLAUDE.md')
     expect(shown).toContain('Skills (40/40)')
     expect(shown).toContain('Free 855,000 · compaction buffer 45,000')
@@ -78,6 +79,15 @@ describe('context-xray', () => {
     const order = ['Messages', 'System tools', 'System prompt', 'MCP tools', 'Memory files'].map(n => shown.indexOf(n))
 
     expect(order).toEqual([...order].sort((a, b) => a - b))
+  })
+
+  test('keeps every figure in a narrow docked pane', async ($, on) => {
+    engine(on)
+    await $.command.run({ command: 'xray', args: '' } as never)
+    const ui = await $.ui.mount({ plugin: 'context-xray', surface: 'desktop', component: 'Pane', requestId: 'context-xray', props: { ...pane, bodyColumns: 40 } })
+    const shown = await texts(ui)
+
+    for (const figure of ['75,400', '41,000', '18,400', '75.4%', '41.0%']) expect(shown).toContain(figure)
   })
 
   test('draws text bars in the terminal', async ($, on) => {

@@ -24,15 +24,22 @@ const pct = (part: number, whole: number) => (whole > 0 ? `${((part / whole) * 1
 const baseName = (path: string) => path.split(/[\\/]/).pop() ?? path
 const byTokens = <T extends { tokens: number }>(rows: T[]) => [...rows].sort((a, b) => b.tokens - a.tokens)
 
+// The markup is wider than any pane and stretches without keeping its aspect,
+// so the bar takes whatever width its slot has left and never pushes the
+// figures beside it out of view.
 const barSvg = (part: number, whole: number, fill: string) => {
-  const r = BAR_HEIGHT / 2
-  const w = whole <= 0 || part <= 0 ? 0 : Math.max(BAR_HEIGHT, Math.min(BAR_WIDTH, (part / whole) * BAR_WIDTH))
+  const w = whole <= 0 || part <= 0 ? 0 : Math.max(1.5, Math.min(BAR_WIDTH, (part / whole) * BAR_WIDTH))
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${BAR_WIDTH}" height="${BAR_HEIGHT}" viewBox="0 0 ${BAR_WIDTH} ${BAR_HEIGHT}">` +
-    `<rect width="${BAR_WIDTH}" height="${BAR_HEIGHT}" rx="${r}" fill="rgb(128,128,128)" fill-opacity="0.28"/>` +
-    (w > 0 ? `<rect width="${w.toFixed(1)}" height="${BAR_HEIGHT}" rx="${r}" fill="${fill}"/>` : '') +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="${BAR_HEIGHT}" viewBox="0 0 ${BAR_WIDTH} ${BAR_HEIGHT}" preserveAspectRatio="none">` +
+    `<rect width="${BAR_WIDTH}" height="${BAR_HEIGHT}" fill="rgb(128,128,128)" fill-opacity="0.28"/>` +
+    (w > 0 ? `<rect width="${w.toFixed(2)}" height="${BAR_HEIGHT}" fill="${fill}"/>` : '') +
     `</svg>`
   )
+}
+
+const shortTool = (name: string, server: string) => {
+  const tool = name.startsWith('mcp__') ? name.split('__').slice(2).join('__') || name : name
+  return `${server} · ${tool}`
 }
 
 const textBar = (part: number, whole: number, cells = 16) => {
@@ -110,42 +117,60 @@ export const register: Register = on => {
     const now = await $.clock.now()
     const svg = e.surface !== 'terminal' && e.surface !== 'mobile'
     const Svg = svg ? $.ui.resolve(e).Svg : undefined
-    const labelWidth = Math.max(16, Math.min(28, e.props.bodyColumns - 40))
 
-    const bar = (part: number, whole: number, fill = BAR_FILL) =>
-      Svg ? (
-        <Svg source={barSvg(part, whole, fill)} alt={pct(part, whole)} width={BAR_WIDTH} height={BAR_HEIGHT} />
+    // Columns sized to the pane: label, figure, share, then the bar in what is
+    // left, so a narrow pane shrinks the bar and never cuts a figure.
+    const cols = e.props.bodyColumns
+    const NUM = 10
+    const PCT = 7
+    const labelWidth = Math.max(10, Math.min(26, Math.floor(cols * 0.42)))
+    const barCells = cols - labelWidth - NUM - PCT - 1
+
+    const bar = (part: number, whole: number, fill = BAR_FILL) => {
+      if (barCells < 4) return null
+      return Svg ? (
+        <Box flexGrow={1} flexShrink={1} marginLeft={1}>
+          <Svg source={barSvg(part, whole, fill)} alt={pct(part, whole)} height={BAR_HEIGHT} />
+        </Box>
       ) : (
-        <Text color={fill === BAR_FILL ? 'claude' : undefined} dimColor={fill !== BAR_FILL}>
-          {textBar(part, whole)}
-        </Text>
+        <Box marginLeft={1}>
+          <Text color={fill === BAR_FILL ? 'claude' : undefined} dimColor={fill !== BAR_FILL}>
+            {textBar(part, whole, Math.min(20, barCells))}
+          </Text>
+        </Box>
       )
+    }
 
     const row = (key: string, label: string, part: number, whole: number, fill?: string) => (
       <Box key={key} flexDirection="row" alignItems="center">
-        <Box width={labelWidth}>
+        <Box width={labelWidth} flexShrink={0}>
           <Text wrap="truncate-end">{label}</Text>
         </Box>
-        {bar(part, whole, fill)}
-        <Box width={11} justifyContent="flex-end">
+        <Box width={NUM} flexShrink={0} justifyContent="flex-end">
           <Text bold>{tokens(part)}</Text>
         </Box>
-        <Text dimColor>{`  ${pct(part, whole)}`}</Text>
+        <Box width={PCT} flexShrink={0} justifyContent="flex-end">
+          <Text dimColor>{pct(part, whole)}</Text>
+        </Box>
+        {bar(part, whole, fill)}
       </Box>
     )
 
     const heading = (text: string, note?: string) => (
-      <Box flexDirection="row" marginTop={1}>
-        <Text bold>{text}</Text>
-        {note && <Text dimColor>{`  ${note}`}</Text>}
+      <Box flexDirection="column" marginTop={1}>
+        <Text bold wrap="truncate-end">{text}</Text>
+        {note && <Text dimColor wrap="truncate-end">{note}</Text>}
       </Box>
     )
 
     const header = (
-      <Box flexDirection="row" justifyContent="space-between">
-        <Text dimColor>
-          {busy ? 'Measuring…' : s ? `Measured ${Math.max(0, Math.round((now - s.at) / 1000))}s ago · ${s.model}` : ''}
-        </Text>
+      <Box flexDirection="row" justifyContent="space-between" alignItems="flex-start">
+        <Box flexDirection="column" flexShrink={1}>
+          <Text dimColor wrap="truncate-end">
+            {busy ? 'Measuring…' : s ? `Measured ${Math.max(0, Math.round((now - s.at) / 1000))}s ago` : ''}
+          </Text>
+          {s && <Text dimColor wrap="truncate-end">{s.model}</Text>}
+        </Box>
         <Button key="refresh" label="Refresh" hotkey="r" onPress={() => measure($)} />
       </Box>
     )
@@ -165,9 +190,10 @@ export const register: Register = on => {
         {header}
         {failed && <Text color="error">{failed}</Text>}
 
-        <Box flexDirection="row" marginTop={1}>
+        <Box flexDirection="row" flexWrap="wrap" marginTop={1}>
           <Text bold>{`${tokens(used)} `}</Text>
-          <Text dimColor>{`of ${tokens(s.maxTokens)} tokens · ${s.percentage}% full`}</Text>
+          <Text dimColor>{`of ${tokens(s.maxTokens)} tokens`}</Text>
+          <Text dimColor>{` · ${s.percentage}% full`}</Text>
         </Box>
 
         {heading('Sent with every request')}
@@ -178,7 +204,7 @@ export const register: Register = on => {
 
         {s.mcpLoaded.length > 0 &&
           heading('MCP tools loaded every request', `${s.mcpLoaded.length} loaded · ${s.mcpDeferredCount} on demand`)}
-        {s.mcpLoaded.slice(0, TOP).map((t: XrayRow & { server: string }) => row(`m:${t.name}`, t.name, t.tokens, used))}
+        {s.mcpLoaded.slice(0, TOP).map((t: XrayRow & { server: string }) => row(`m:${t.name}`, shortTool(t.name, t.server), t.tokens, used))}
 
         {s.memoryFiles.length > 0 && heading('Memory files')}
         {s.memoryFiles.map(f => row(`f:${f.name}`, baseName(f.name), f.tokens, used))}

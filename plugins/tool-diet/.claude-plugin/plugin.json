@@ -1,6 +1,6 @@
 {
   "name": "tool-diet",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Moves tools you have not used lately behind ToolSearch, so their descriptions stop riding along on every request; core tools and anything you used in your last five sessions stay loaded.",
   "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
 }

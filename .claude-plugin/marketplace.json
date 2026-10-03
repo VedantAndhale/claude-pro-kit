@@ -1,9 +1,12 @@
 {
   "name": "claude-pro-kit",
-  "owner": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" },
+  "owner": {
+    "name": "Vedant Andhale",
+    "url": "https://github.com/VedantAndhale"
+  },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a context breakdown, fewer tools loaded per request, shorter shell output, no repeat file reads. The mods spend no tokens themselves.",
-    "version": "0.2.0"
+    "version": "0.2.1"
   },
   "plugins": [
     {
@@ -22,13 +25,13 @@
       "name": "tool-diet",
       "source": "./plugins/tool-diet",
       "description": "Loads tools you have not used lately on demand through ToolSearch instead of with every request; core tools and recently used ones stay loaded.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     {
       "name": "context-xray",
       "source": "./plugins/context-xray",
       "description": "/xray opens a pane with the exact breakdown of what fills the context window and which tools load on every request.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     {
       "name": "reread-guard",

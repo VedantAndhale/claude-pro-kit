@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { CORE, RECENT, shouldDefer } from '../hooks/register'
+import { CORE, RECENT, shouldDefer, sourceOf, summarize } from '../hooks/register'
 
 const memory = (patch: Partial<{ sessions: number; lastUsed: Record<string, number>; keep: string[]; isOff: boolean }> = {}) => ({
   sessions: 10,
@@ -58,6 +58,19 @@ const describeTool = (tool: string, isDeferred = false) => ({
   ...(isDeferred ? { isDeferred: true as const } : {}),
 })
 
+describe('summary', () => {
+  test('names MCP servers instead of ids and groups by source', () => {
+    expect(sourceOf({ plugin: 'engine', tier: 'core' })).toBe('built-in')
+    expect(sourceOf({ plugin: 'mcp:claude.ai Claude Docs', tier: 'user' })).toBe('claude.ai Claude Docs')
+
+    const moved = new Map([
+      ['Artifact', 'built-in'], ['Workflow', 'built-in'], ['ListAgents', 'built-in'], ['ReportFindings', 'built-in'], ['SendUserFile', 'built-in'],
+      ['mcp__1a59c906-04da__batch', 'claude.ai Claude Docs'], ['mcp__1a59c906-04da__guide', 'claude.ai Claude Docs'],
+    ])
+    expect(summarize(moved)).toBe('5 built-in: Artifact, ListAgents, ReportFindings +2 more · 2 from claude.ai Claude Docs: batch, guide')
+  })
+})
+
 describe('tool-diet', () => {
   test('moves an unused tool on demand and leaves core tools loaded', async ($, on) => {
     engine(on)
@@ -85,7 +98,7 @@ describe('tool-diet', () => {
 
     const ran = await $.command.run({ command: 'tool-diet', args: '' } as never)
     expect(ran.text).toBeUndefined()
-    expect(toasts.at(-1)).toBe('On demand this session: Artifact, Workflow. /tool-diet keep <tool> to keep one loaded.')
+    expect(toasts.at(-1)).toBe('2 tools on demand. 2 built-in: Artifact, Workflow')
   })
 
   test('/tool-diet keep pins a tool for later sessions', async ($, on) => {

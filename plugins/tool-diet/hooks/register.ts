@@ -54,10 +54,38 @@ export const shouldDefer = (tool: string, memory: Memory): boolean => {
   return last === undefined || last <= memory.sessions - RECENT
 }
 
+// Where a tool comes from, as a person would name it: `built-in`, an MCP
+// server's own name (`claude.ai Claude Docs`), or the plugin's name.
+export const sourceOf = (provider: unknown): string => {
+  const name = (provider as { plugin?: string } | undefined)?.plugin ?? 'other'
+  if (name === 'engine') return 'built-in'
+  return name.startsWith('mcp:') ? name.slice(4) : name
+}
+
+// An MCP tool's own name without the `mcp__<server>__` prefix.
+const toolName = (tool: string) => (tool.startsWith('mcp__') ? tool.split('__').slice(2).join('__') || tool : tool)
+
+const SHOWN_PER_SOURCE = 3
+
+// `10 built-in: Artifact, ListAgents, Workflow +7 more · 3 from Claude Docs: batch, guide, update`
+export const summarize = (moved: Map<string, string>): string => {
+  const groups = new Map<string, string[]>()
+  for (const [tool, source] of moved) groups.set(source, [...(groups.get(source) ?? []), toolName(tool)])
+  return [...groups]
+    .sort((a, b) => b[1].length - a[1].length)
+    .map(([source, tools]) => {
+      const names = tools.sort().slice(0, SHOWN_PER_SOURCE).join(', ')
+      const more = tools.length > SHOWN_PER_SOURCE ? ` +${tools.length - SHOWN_PER_SOURCE} more` : ''
+      const label = source === 'built-in' ? 'built-in' : `from ${source}`
+      return `${tools.length} ${label}: ${names}${more}`
+    })
+    .join(' · ')
+}
+
 export const register: Register = on => {
-  // This session's number, and what it moved: for the status line and /tool-diet.
+  // This session's number, and what it moved (tool -> source): for the status line and /tool-diet.
   let session = 0
-  const moved = new Set<string>()
+  const moved = new Map<string, string>()
 
   on('session.start', async ($, e, next) => {
     const memory = await recall($)
@@ -77,7 +105,7 @@ export const register: Register = on => {
     if (e.isDeferred || described.isDeferred) return described
     if (!shouldDefer(e.tool, await recall($))) return described
 
-    moved.add(e.tool)
+    moved.set(e.tool, sourceOf(e.provider))
     $.ui.status(`${moved.size} ${moved.size === 1 ? 'tool' : 'tools'} on demand`)
     return { ...described, isDeferred: true }
   })
@@ -112,13 +140,12 @@ export const register: Register = on => {
       return {}
     }
 
-    const list = [...moved].sort().join(', ')
     $.ui.toast(
       memory.isOff
         ? 'Tool diet is off. /tool-diet on to turn it back on.'
         : moved.size === 0
           ? 'Tool diet: every tool is loaded this session.'
-          : `On demand this session: ${list}. /tool-diet keep <tool> to keep one loaded.`,
+          : `${moved.size} tools on demand. ${summarize(moved)}`,
       { timeoutMs: 15_000 },
     )
     return {}
