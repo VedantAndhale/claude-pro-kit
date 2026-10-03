@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "plugins": [
     {
@@ -79,6 +79,12 @@
       "name": "collision-guard",
       "source": "./plugins/collision-guard",
       "description": "Asks before Claude edits a file another chat on this machine changed in the last 30 minutes.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "answer-pane",
+      "source": "./plugins/answer-pane",
+      "description": "Explanations as visual pages in a pane beside the chat, built by answer-me-with-html (MIT): diagrams drawn in place, the full page one click away.",
       "version": "0.1.0"
     }
   ]

@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Twelve small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Thirteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -19,6 +19,7 @@ Twelve small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that 
 | **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
 | **turn-budget** | Asks before a single turn uses more than +5 session points, and stops that turn cleanly if you say so | Everywhere |
 | **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
+| **answer-pane** | Explanations as visual pages in a pane beside the chat, built by answer-me-with-html's renderer | Desktop app (text in the terminal) |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -43,6 +44,7 @@ In Claude Code:
 /plugin install budget-guard@claude-pro-kit
 /plugin install turn-budget@claude-pro-kit
 /plugin install collision-guard@claude-pro-kit
+/plugin install answer-pane@claude-pro-kit
 /plugin install kit-updates@claude-pro-kit
 ```
 
@@ -210,6 +212,25 @@ README.md was changed by another chat 4 min ago (chat 7dc9d8a1 in mods). Edit it
 - It only sees edits made through Claude's edit tools: a file changed by a shell command (`sed`, a formatter, `git checkout`) isn't recorded. It only knows about chats that have the mod. A chat in its own git worktree has its own copy of the files, so it never clashes.
 - Zero tokens unless you press Cancel. No model calls, no network. A question nobody can answer (a `-p` run) lets the edit through.
 - `/collisions` lists the files other chats changed here recently, `/collisions 15` sets the window in minutes, `/collisions off|on` switches it. Answers are toasts. The status line reads `1 other chat active here` while another chat is editing in the same folder.
+
+## answer-pane
+
+A port of [answer-me-with-html](https://github.com/QingYunA/answer-me-with-html) (MIT, by its contributors) from a skill to a mod. When an answer needs a picture (a process, a comparison, a hierarchy, three or more linked ideas), Claude writes a short Markdown draft, and their renderer, bundled in `vendor/` with its license, turns it into a one-page explainer. The mod then shows that page in a pane beside the chat:
+
+- Claude sends the draft through a tool, not a Bash command, so there's no permission prompt and the draft isn't echoed into the transcript.
+- `flow` and `sequence` diagrams are drawn in the pane, in the page's own styles, light or dark. The other parts show as text. **Open in browser** (`o`) shows the full page.
+- If the renderer rejects a line, its exact fix goes back to Claude, which corrects the draft and tries again.
+- `/pages` lists this session's pages. Pages are saved under `~/.claude/answer-pane/`. Needs Node.js 20 or newer.
+
+What it costs, measured with your setup's prompt for "Reply with just OK.":
+
+| | Prompt tokens per request |
+| --- | ---: |
+| Without answer-pane | 24,285 |
+| `/pages auto on` (default): Claude can choose a page on its own | 25,604 (+1,319) |
+| `/pages auto off`: pages only when you ask for one | 25,066 (+781) |
+
+The tool has to be listed for Claude to pick it unprompted. That's the default, and `/pages auto off` takes it out of every request from the next session. The mod itself makes no model calls: the draft is Claude's answer, and the rendering happens on your machine.
 
 ## kit-updates
 
