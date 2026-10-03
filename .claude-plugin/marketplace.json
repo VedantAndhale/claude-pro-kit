@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "plugins": [
     {
@@ -74,6 +74,12 @@
       "source": "./plugins/kit-updates",
       "description": "Tells you when an installed claude-pro-kit mod has a newer version or a new mod joins the kit; /kit-update installs updates.",
       "version": "0.2.0"
+    },
+    {
+      "name": "collision-guard",
+      "source": "./plugins/collision-guard",
+      "description": "Asks before Claude edits a file another chat on this machine changed in the last 30 minutes.",
+      "version": "0.1.0"
     }
   ]
 }

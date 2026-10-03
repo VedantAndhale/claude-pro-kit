@@ -1,0 +1,6 @@
+{
+  "name": "collision-guard",
+  "version": "0.1.0",
+  "description": "Asks before Claude edits a file another chat on this machine changed in the last 30 minutes. Each chat keeps its own small ledger; no model calls, no network.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}
