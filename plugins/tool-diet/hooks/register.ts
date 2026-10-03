@@ -59,26 +59,32 @@ export const shouldDefer = (tool: string, memory: Memory): boolean => {
 export const sourceOf = (provider: unknown): string => {
   const name = (provider as { plugin?: string } | undefined)?.plugin ?? 'other'
   if (name === 'engine') return 'built-in'
-  return name.startsWith('mcp:') ? name.slice(4) : name
+  const source = name.startsWith('mcp:') ? name.slice(4) : name
+  // Some connectors reach a plugin only as an id; name those plainly.
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(source) ? 'a connector' : source
 }
 
 // An MCP tool's own name without the `mcp__<server>__` prefix.
 const toolName = (tool: string) => (tool.startsWith('mcp__') ? tool.split('__').slice(2).join('__') || tool : tool)
 
-const SHOWN_PER_SOURCE = 3
+const SHOWN_PER_SOURCE = 2
+const SHOWN_SOURCES = 3
 
-// `10 built-in: Artifact, ListAgents, Workflow +7 more · 3 from Claude Docs: batch, guide, update`
+// `19 from Claude Browser: browser_batch, computer +17 more · 10 built-in: Artifact, ListAgents +8 more · +2 more sources`
 export const summarize = (moved: Map<string, string>): string => {
   const groups = new Map<string, string[]>()
   for (const [tool, source] of moved) groups.set(source, [...(groups.get(source) ?? []), toolName(tool)])
-  return [...groups]
-    .sort((a, b) => b[1].length - a[1].length)
+  const sorted = [...groups].sort((a, b) => b[1].length - a[1].length)
+  const rest = sorted.length - SHOWN_SOURCES
+  return sorted
+    .slice(0, SHOWN_SOURCES)
     .map(([source, tools]) => {
       const names = tools.sort().slice(0, SHOWN_PER_SOURCE).join(', ')
       const more = tools.length > SHOWN_PER_SOURCE ? ` +${tools.length - SHOWN_PER_SOURCE} more` : ''
       const label = source === 'built-in' ? 'built-in' : `from ${source}`
       return `${tools.length} ${label}: ${names}${more}`
     })
+    .concat(rest > 0 ? [`+${rest} more ${rest === 1 ? 'source' : 'sources'}`] : [])
     .join(' · ')
 }
 

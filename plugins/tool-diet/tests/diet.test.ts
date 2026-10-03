@@ -67,7 +67,11 @@ describe('summary', () => {
       ['Artifact', 'built-in'], ['Workflow', 'built-in'], ['ListAgents', 'built-in'], ['ReportFindings', 'built-in'], ['SendUserFile', 'built-in'],
       ['mcp__1a59c906-04da__batch', 'claude.ai Claude Docs'], ['mcp__1a59c906-04da__guide', 'claude.ai Claude Docs'],
     ])
-    expect(summarize(moved)).toBe('5 built-in: Artifact, ListAgents, ReportFindings +2 more · 2 from claude.ai Claude Docs: batch, guide')
+    expect(summarize(moved)).toBe('5 built-in: Artifact, ListAgents +3 more · 2 from claude.ai Claude Docs: batch, guide')
+    expect(sourceOf({ plugin: 'mcp:1a59c906-04da-521d-bda7-7f71b9f9e01c', tier: 'user' })).toBe('a connector')
+
+    const many = new Map([['a', 'one'], ['b', 'two'], ['c', 'three'], ['d', 'four'], ['e', 'five']])
+    expect(summarize(many).endsWith(' · +2 more sources')).toBe(true)
   })
 })
 

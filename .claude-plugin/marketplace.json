@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a context breakdown, fewer tools loaded per request, shorter shell output, no repeat file reads. The mods spend no tokens themselves.",
-    "version": "0.2.2"
+    "version": "0.2.3"
   },
   "plugins": [
     {
@@ -25,7 +25,7 @@
       "name": "tool-diet",
       "source": "./plugins/tool-diet",
       "description": "Loads tools you have not used lately on demand through ToolSearch instead of with every request; core tools and recently used ones stay loaded.",
-      "version": "0.1.1"
+      "version": "0.1.2"
     },
     {
       "name": "context-xray",
