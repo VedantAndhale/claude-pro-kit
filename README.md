@@ -51,7 +51,9 @@ On that setup, the largest tool moved was `Artifact`, whose description alone is
 - The first time a deferred tool is used in a session costs one extra step, a ToolSearch call. After that it stays loaded for the session.
 - Using a tool keeps it loaded for your next five sessions, so the set follows what you actually use.
 - The choice is made once per tool per session, so the prompt cache is never disturbed mid-session. Changes apply from the next session.
-- `/tool-diet` lists what is on demand this session; `/tool-diet keep <tool>` always loads one, `unkeep` undoes it, and `/tool-diet off|on` switches it. Answers are toasts, so they add nothing to the conversation.
+- `/tool-diet` lists what is on demand this session, grouped by where each tool comes from; `/tool-diet keep <tool>` always loads one, `unkeep` undoes it, and `/tool-diet off|on` switches it. Answers are toasts, so they add nothing to the conversation. The status line keeps the count: `38 tools on demand`.
+
+![The /tool-diet toast: 38 tools on demand, grouped by source](docs/tool-diet-toast.png)
 
 ## context-xray
 
@@ -61,10 +63,16 @@ On that setup, the largest tool moved was `Artifact`, whose description alone is
 
 ## pro-hud
 
+The recording at the top of this page is the band. In text:
+
 ```
-Session ━━━━━──────  20%  3h 20m     Week ━━━━━━━───  66%  4d 19h     Context ━━━───────  24%  244,205 tokens
-This turn 12s  ·  3 tools  ·  1 file edited  ·  612,040 in  ·  608,880 cached  ·  1,204 out
+Session    ━━━━━━━━━━━━━━──────   69%  resets in 32m
+Week       ━━━━━━━━━━━━━━━─────   74%  resets in 4d 17h
+Context    ━━━━━━━━────────────   44%  436,034 tokens
+This turn  1m 35s · 1 tool · 0 files edited · 436,034 in · 431,260 cached · 580 out
 ```
+
+On a wide window the three meters sit side by side on one row; on a narrow one each figure on the turn line wraps whole rather than being cut off.
 
 - **Session / Week**: the share of your plan's 5-hour and 7-day allowance used, and when each resets. Account-wide: every chat and device counts.
 - **Context**: how full this conversation is. Every request resends it, so a fuller context spends your session faster; `/compact` when it climbs.
@@ -90,6 +98,7 @@ When a `Bash` or `PowerShell` result runs past 120 lines or 8,000 characters, Cl
 ```
 
 - You still see the output in the transcript as before; only Claude's copy is trimmed.
+- The status line keeps a running count: `3 trimmed · 41,200 chars saved`.
 - The untrimmed text is written to disk first; if the write fails, nothing is trimmed.
 - It goes in the session's own `tool-results` folder, beside the transcript, where Claude Code keeps the outputs it saves itself, so Claude can open it without a permission prompt. When that folder cannot be found, it goes under `~/.claude/output-diet/` (or `CLAUDE_CONFIG_DIR`).
 - Claude Code itself already cuts the middle out of very long shell output (past roughly 10,000 characters) before any mod sees it, and for a failing command no uncut copy is kept. output-diet works on what is left: the saved file holds everything Claude would have read, and an error line Claude Code cut is not in it.
@@ -97,6 +106,14 @@ When a `Bash` or `PowerShell` result runs past 120 lines or 8,000 characters, Cl
 ## reread-guard
 
 When Claude asks to `Read` the same range of the same file again in the same conversation, and the file's size and modification time have not changed, the read is skipped and Claude is told to use the copy it has. Any edit, a different range, or a subagent (which has its own context) reads freely. Claude Code can clear old tool results from context, so retrying the identical read straight after a skip always goes through. The record resets on `/compact` and `/clear`.
+
+What Claude is told in place of the repeat read, kept to one line because the model reads it:
+
+```
+api.ts unchanged since you read it; use that copy. If it's gone from context, retry the same Read.
+```
+
+The status line counts them: `2 re-reads skipped`.
 
 ## Benchmark
 
