@@ -1,6 +1,6 @@
 {
   "name": "kit-updates",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Tells you when a newer version of an installed claude-pro-kit mod is out, and /kit-update installs it. One small download per session, no tokens spent.",
   "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
 }

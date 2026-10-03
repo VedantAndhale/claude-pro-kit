@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a context breakdown, fewer tools loaded per request, shorter shell output, no repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.4.0"
+    "version": "0.4.1"
   },
   "plugins": [
     {
@@ -43,13 +43,13 @@
       "name": "cache-clock",
       "source": "./plugins/cache-clock",
       "description": "Status line countdown until the prompt cache expires; once it has, the exact tokens your next message re-sends uncached.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     {
       "name": "kit-updates",
       "source": "./plugins/kit-updates",
-      "description": "Tells you when an installed claude-pro-kit mod has a newer version; /kit-update installs it.",
-      "version": "0.1.0"
+      "description": "Tells you when an installed claude-pro-kit mod has a newer version or a new mod joins the kit; /kit-update installs updates.",
+      "version": "0.2.0"
     }
   ]
 }

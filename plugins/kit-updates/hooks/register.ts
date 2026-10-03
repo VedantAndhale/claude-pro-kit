@@ -40,25 +40,53 @@ export const findUpdates = (installed: Installed, catalog: Catalog): Update[] =>
       : []
   })
 
+// Mods in the catalog that are not installed and not announced before. The
+// first run only records the catalog: a mod someone skipped is never news.
+export const findNewMods = (installed: Installed, catalog: Catalog, seen: string[] | undefined) =>
+  seen === undefined
+    ? []
+    : (catalog.plugins ?? [])
+        .map(p => p.name)
+        .filter(name => !seen.includes(name) && installed.plugins?.[`${name}@${MARKETPLACE}`] === undefined)
+
+export const describeNewMods = (names: string[]) =>
+  `${MARKETPLACE}: new ${names.length === 1 ? 'mod' : 'mods'} ${names.join(', ')}. ` +
+  `Install with ${names.map(n => `/plugin install ${n}@${MARKETPLACE}`).join(' and ')}.`
+
 export const describeUpdates = (updates: Update[]) =>
   `${MARKETPLACE}: ${updates.length === 1 ? 'an update' : `${updates.length} updates`} available ` +
   `(${updates.map(u => `${u.name} ${u.from} → ${u.to}`).join(', ')}). Run /kit-update.`
 
-async function check($: EngineInterface): Promise<Update[] | undefined> {
+async function load($: EngineInterface) {
   const dir = pluginsDirOf($.plugin.root)
   if (dir === undefined) return undefined
   const installed = JSON.parse(await $.fs.read(`${dir}/installed_plugins.json`)) as Installed
   const response = await $.http.fetch(CATALOG_URL)
   if (!response.ok) return undefined
-  return findUpdates(installed, JSON.parse(response.text) as Catalog)
+  return { installed, catalog: JSON.parse(response.text) as Catalog }
+}
+
+async function check($: EngineInterface): Promise<Update[] | undefined> {
+  const got = await load($)
+  return got && findUpdates(got.installed, got.catalog)
 }
 
 async function notify($: EngineInterface) {
-  const updates = await check($).catch(() => undefined)
-  if (updates === undefined || updates.length === 0) return
-  const text = describeUpdates(updates)
-  $.ui.toast(text)
-  $.ui.log(text)
+  const got = await load($).catch(() => undefined)
+  if (got === undefined) return
+  const lines: string[] = []
+  const updates = findUpdates(got.installed, got.catalog)
+  if (updates.length > 0) lines.push(describeUpdates(updates))
+
+  const seen = (await $.store.get('seenMods')) as string[] | undefined
+  const fresh = findNewMods(got.installed, got.catalog, seen)
+  if (fresh.length > 0) lines.push(describeNewMods(fresh))
+  await $.store.set('seenMods', [...new Set([...(seen ?? []), ...(got.catalog.plugins ?? []).map(p => p.name)])])
+
+  for (const text of lines) {
+    $.ui.toast(text)
+    $.ui.log(text)
+  }
 }
 
 async function install($: EngineInterface) {

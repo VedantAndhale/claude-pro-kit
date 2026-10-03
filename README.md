@@ -14,7 +14,7 @@ Seven small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that s
 | **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
 | **cache-clock** | Counts down until the prompt cache expires; once it has, shows exactly how many tokens your next message will re-send uncached | Everywhere |
-| **kit-updates** | Tells you when an installed mod from this kit has a newer version; `/kit-update` installs it | Everywhere |
+| **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
 
@@ -132,13 +132,13 @@ cache warm · 3m left
 cache cold · next message re-sends 61,204 tokens
 ```
 
-When the cache runs out, a toast says so once. The token figure is the previous response's input, cache and output tokens as the API reported them, which is exactly what the next request sends. After a message that did go out uncached, a dim transcript line confirms the real figure:
+When the cache runs out, a toast says so once (after the lifetime is known, see below). The token figure is the previous response's input, cache and output tokens as the API reported them, which is exactly what the next request sends. After a message that did go out uncached, a dim transcript line confirms the real figure:
 
 ```
 cache-clock: cache expired after 7m 12s idle; this message re-sent 61,204 tokens uncached.
 ```
 
-Claude Code does not report the cache's lifetime on a turn, so cache-clock learns it. Until it knows, it assumes 5 minutes and says `≥3m left` and `likely cold`. The first cache hit after more than 5 minutes idle proves a 1-hour cache, and a miss proves 5 minutes; the answer is kept across sessions. Subagents have their own cache and do not move the clock.
+Claude Code does not report the cache's lifetime on a turn, so cache-clock learns it. Until it knows, it assumes 5 minutes, says `≥3m left` and `likely cold`, and shows no toast, since on a 1-hour cache a 5-minute alarm would be false. The first cache hit after more than 5 minutes idle proves a 1-hour cache, and a miss proves 5 minutes; the answer is kept across sessions. Subagents have their own cache and do not move the clock.
 
 ## kit-updates
 
@@ -148,7 +148,7 @@ At the start of each session it downloads this repo's `marketplace.json` (about 
 claude-pro-kit: 2 updates available (pro-hud 0.2.1 → 0.2.2, tool-diet 0.1.2 → 0.1.3). Run /kit-update.
 ```
 
-`/kit-update` runs `claude plugin marketplace update claude-pro-kit` and then `claude plugin update` for each outdated mod. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. Mods you have not installed are left alone.
+`/kit-update` runs `claude plugin marketplace update claude-pro-kit` and then `claude plugin update` for each outdated mod. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. When a new mod joins the kit, it says so once, with the install command; mods already in the kit when you installed kit-updates are not announced.
 
 ## Benchmark
 

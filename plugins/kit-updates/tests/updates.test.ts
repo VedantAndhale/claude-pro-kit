@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { compareVersions, describeUpdates, findUpdates, pluginsDirOf } from '../hooks/register'
+import { compareVersions, describeNewMods, describeUpdates, findNewMods, findUpdates, pluginsDirOf } from '../hooks/register'
 
 const installed = {
   plugins: {
@@ -53,6 +53,21 @@ describe('kit-updates', () => {
   test('describes the updates with exact versions', async () => {
     expect(describeUpdates([{ name: 'pro-hud', from: '0.2.1', to: '0.2.2' }])).toBe(
       'claude-pro-kit: an update available (pro-hud 0.2.1 → 0.2.2). Run /kit-update.',
+    )
+  })
+
+  test('announces a mod that is new since the last check and not installed', async () => {
+    expect(findNewMods(installed, catalog, ['pro-hud', 'tool-diet', 'reread-guard'])).toEqual(['context-xray'])
+  })
+
+  test('announces nothing on the first run or once a mod was seen', async () => {
+    expect(findNewMods(installed, catalog, undefined)).toEqual([])
+    expect(findNewMods(installed, catalog, ['context-xray'])).toEqual([])
+  })
+
+  test('describes new mods with the install command', async () => {
+    expect(describeNewMods(['cache-clock'])).toBe(
+      'claude-pro-kit: new mod cache-clock. Install with /plugin install cache-clock@claude-pro-kit.',
     )
   })
 })

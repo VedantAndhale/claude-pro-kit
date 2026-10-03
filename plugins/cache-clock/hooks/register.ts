@@ -7,7 +7,9 @@ import type { EngineInterface, Register } from 'claude-code'
 //
 // The engine does not report the cache's lifetime on a turn, so it is learned:
 // 5 minutes until a cache hit after a longer gap proves 1 hour, or a miss after
-// one proves 5 minutes. The answer is kept across sessions.
+// one proves 5 minutes. The answer is kept across sessions. Until it is known
+// the status line hedges and no toast is shown: a 1-hour cache would make a
+// 5-minute alarm false.
 
 const FIVE_MIN = 5 * 60_000
 const ONE_HOUR = 60 * 60_000
@@ -68,9 +70,9 @@ async function tick($: EngineInterface) {
   if (left > 0) return
   ticker?.cancel()
   ticker = undefined
-  if (!isColdShown) {
+  if (!isColdShown && ttl.isConfirmed) {
     isColdShown = true
-    $.ui.toast(`Prompt cache ${ttl.isConfirmed ? 'expired' : 'likely expired'}: your next message re-sends ${tokens(contextTok)} tokens uncached.`)
+    $.ui.toast(`Prompt cache expired: your next message re-sends ${tokens(contextTok)} tokens uncached.`)
   }
 }
 
