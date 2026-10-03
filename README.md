@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Seven small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt: every figure on screen is one Claude Code already reports, or a time the mod measured.
+Ten small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -14,6 +14,9 @@ Seven small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that s
 | **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
 | **cache-clock** | Counts down until the prompt cache expires; once it has, shows exactly how many tokens your next message will re-send uncached | Everywhere |
+| **read-cap** | Stops Claude reading a file over 1,000 lines whole and gives it an outline tool, so it reads only the lines it needs; a retry still reads the whole file | Everywhere |
+| **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
+| **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -33,6 +36,9 @@ In Claude Code:
 /plugin install output-diet@claude-pro-kit
 /plugin install reread-guard@claude-pro-kit
 /plugin install cache-clock@claude-pro-kit
+/plugin install read-cap@claude-pro-kit
+/plugin install session-receipt@claude-pro-kit
+/plugin install budget-guard@claude-pro-kit
 /plugin install kit-updates@claude-pro-kit
 ```
 
@@ -139,6 +145,36 @@ cache-clock: cache expired after 7m 12s idle; this message re-sent 61,204 tokens
 ```
 
 Claude Code does not report the cache's lifetime on a turn, so cache-clock learns it. Until it knows, it assumes 5 minutes, says `≥3m left` and `likely cold`, and shows no toast, since on a 1-hour cache a 5-minute alarm would be false. The first cache hit after more than 5 minutes idle proves a 1-hour cache, and a miss proves 5 minutes; the answer is kept across sessions. Subagents have their own cache and do not move the clock.
+
+## read-cap
+
+When Claude asks to `Read` a text file of more than 1,000 lines with no line range, the read is refused once, with the exact line count, and Claude is pointed at the outline tool:
+
+```
+big.ts has 3,000 lines. Call mcp__read-cap__outline to see its definitions with line numbers, then Read only the range you need (offset, limit). Retry the same Read to read it whole anyway.
+```
+
+The outline tool lists a file's functions, classes, types and Markdown headings with their line numbers. It is built from the file on disk with no model call, and covers JavaScript, TypeScript, Python, Go, Rust, Java, C#, Kotlin, Swift and Markdown. In a live run on a 3,000-line file, Claude called the outline, then read the 10 lines it needed instead of the whole file. Retrying the same whole-file Read always goes through, ranged reads, images and PDFs are never touched, and the status line counts the reads capped.
+
+## session-receipt
+
+`/receipt` opens a pane listing every turn of the session with the tokens its requests reported, main thread and subagents together:
+
+```
+#3  61,000 new · 50,000 cached · 2,000 out (8,500 subagents) · 3 tools · 42s
+```
+
+`new` is input the prompt cache did not serve (uncached input plus cache writes) and `out` is output; both are full price. `cached` is input read from the cache, at a tenth of the price. The pane opens with the session totals and the five turns that spent the most new and output tokens, each with the first line of its prompt, so you can see which requests made a session expensive. Opening it adds nothing to the conversation, and `/clear` starts a fresh receipt.
+
+## budget-guard
+
+Before a prompt starts a turn, budget-guard checks the 5-hour and weekly usage readings Claude Code reports (the same exact percentages pro-hud shows). If either is at or over your limit, the prompt is held back and you are told why:
+
+```
+budget-guard: 5-hour usage at 93%, resets in 1h 12m (your limit is 90%). Send the same message again to go ahead, or /budget off.
+```
+
+Sending the same message again goes through, so nothing is ever blocked for good. `/budget` shows the limit and the current readings, `/budget 80` sets the limit (kept across sessions), and `/budget on|off` switches it. Until Claude Code has reported a reading in the session, nothing is held.
 
 ## kit-updates
 

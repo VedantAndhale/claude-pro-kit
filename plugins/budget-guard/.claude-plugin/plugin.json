@@ -1,0 +1,6 @@
+{
+  "name": "budget-guard",
+  "version": "0.1.0",
+  "description": "Holds a prompt back once your 5-hour or weekly usage is at or over a limit you set (90% by default); sending it again goes through. No tokens spent.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}

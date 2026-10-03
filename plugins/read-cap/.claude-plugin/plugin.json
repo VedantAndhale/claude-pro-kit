@@ -1,0 +1,6 @@
+{
+  "name": "read-cap",
+  "version": "0.1.0",
+  "description": "Stops Claude reading a file over 1,000 lines whole and gives it an outline tool (definitions with line numbers) so it reads only the range it needs. A retry still reads it whole.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}

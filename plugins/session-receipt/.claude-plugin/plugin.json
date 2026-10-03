@@ -1,0 +1,7 @@
+{
+  "name": "session-receipt",
+  "version": "0.1.0",
+  "description": "/receipt opens a pane with the exact tokens every turn of the session spent (uncached, cached, output, subagents) and the costliest turns. No tokens spent.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" },
+  "types": "./types/index.d.ts"
+}

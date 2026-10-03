@@ -5,8 +5,8 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a context breakdown, fewer tools loaded per request, shorter shell output, no repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.4.1"
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
+    "version": "0.5.0"
   },
   "plugins": [
     {
@@ -44,6 +44,24 @@
       "source": "./plugins/cache-clock",
       "description": "Status line countdown until the prompt cache expires; once it has, the exact tokens your next message re-sends uncached.",
       "version": "0.1.1"
+    },
+    {
+      "name": "read-cap",
+      "source": "./plugins/read-cap",
+      "description": "Stops a whole-file read of a file over 1,000 lines once and gives Claude an outline tool so it reads only the range it needs.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "session-receipt",
+      "source": "./plugins/session-receipt",
+      "description": "/receipt opens a pane with the exact tokens every turn of the session spent and the costliest turns.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "budget-guard",
+      "source": "./plugins/budget-guard",
+      "description": "Holds a prompt back once your 5-hour or weekly usage is at or over your limit (90% by default); sending it again goes through.",
+      "version": "0.1.0"
     },
     {
       "name": "kit-updates",
