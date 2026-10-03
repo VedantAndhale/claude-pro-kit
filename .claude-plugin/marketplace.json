@@ -5,8 +5,8 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a context breakdown, fewer tools loaded per request, shorter shell output, no repeat file reads. The mods spend no tokens themselves.",
-    "version": "0.2.3"
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a context breakdown, fewer tools loaded per request, shorter shell output, no repeat file reads, update notices. The mods spend no tokens themselves.",
+    "version": "0.3.0"
   },
   "plugins": [
     {
@@ -37,6 +37,12 @@
       "name": "reread-guard",
       "source": "./plugins/reread-guard",
       "description": "Skips Claude's identical re-read of a file that has not changed; a deliberate retry still goes through.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "kit-updates",
+      "source": "./plugins/kit-updates",
+      "description": "Tells you when an installed claude-pro-kit mod has a newer version; /kit-update installs it.",
       "version": "0.1.0"
     }
   ]

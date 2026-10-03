@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Five small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt: every figure on screen is one Claude Code already reports, or a time the mod measured.
+Six small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt: every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ Five small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that sh
 | **pro-hud** | Live meters above the prompt for your 5-hour session, your week and the context window, plus a per-turn receipt of tokens in, cached and out | Claude desktop app |
 | **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
+| **kit-updates** | Tells you when an installed mod from this kit has a newer version; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
 
@@ -30,9 +31,10 @@ In Claude Code:
 /plugin install pro-hud@claude-pro-kit
 /plugin install output-diet@claude-pro-kit
 /plugin install reread-guard@claude-pro-kit
+/plugin install kit-updates@claude-pro-kit
 ```
 
-To get fixes and new mods as they ship, turn on auto-update once: in a terminal, run `claude`, then `/plugin` → **Marketplaces** → `claude-pro-kit` → **Enable auto-update**. It is off by default for marketplaces you add yourself, and the desktop app has no toggle for it; `/plugin marketplace update claude-pro-kit` refreshes by hand from anywhere.
+Updates are off by default for marketplaces you add yourself. With **kit-updates** installed you are told when a fix ships and `/kit-update` installs it, from the desktop app or the terminal. Without it, turn on auto-update once: in a terminal, run `claude`, then `/plugin` → **Marketplaces** → `claude-pro-kit` → **Enable auto-update**; the desktop app has no toggle for it.
 
 Install any one on its own; they do not depend on each other. Mods are not sandboxed, so read the code before installing: each mod is a single file under `plugins/<name>/hooks/`.
 
@@ -116,6 +118,16 @@ api.ts unchanged since you read it; use that copy. If it's gone from context, re
 ```
 
 The status line counts them: `2 re-reads skipped`.
+
+## kit-updates
+
+At the start of each session it downloads this repo's `marketplace.json` (about 2 KB, from GitHub) and compares it with the versions in your `installed_plugins.json`. When an installed mod is behind, a toast and a dim transcript line say so, with exact versions:
+
+```
+claude-pro-kit: 2 updates available (pro-hud 0.2.1 → 0.2.2, tool-diet 0.1.2 → 0.1.3). Run /kit-update.
+```
+
+`/kit-update` runs `claude plugin marketplace update claude-pro-kit` and then `claude plugin update` for each outdated mod. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. Mods you have not installed are left alone.
 
 ## Benchmark
 
