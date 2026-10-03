@@ -1,0 +1,21 @@
+name: Mod idea
+description: A workaround or script you run around Claude Code that could be a mod
+labels: [idea]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What gets in your way?
+      description: The problem, not the fix. For example, "long test runs fill my context".
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: How do you work around it today?
+      description: A script, an alias, a hook, a habit. Paste it if it's short.
+  - type: textarea
+    id: measure
+    attributes:
+      label: How would we know it helps?
+      description: The number it should move, such as tokens per request, session %, or turns per task.

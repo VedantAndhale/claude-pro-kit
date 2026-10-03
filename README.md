@@ -1,5 +1,7 @@
 # claude-pro-kit
 
+[![test](https://github.com/VedantAndhale/claude-pro-kit/actions/workflows/test.yml/badge.svg)](https://github.com/VedantAndhale/claude-pro-kit/actions/workflows/test.yml)
+
 Make the $20 Claude Pro plan last longer in Claude Code.
 
 Five small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt: every figure on screen is one Claude Code already reports, or a time the mod measured.

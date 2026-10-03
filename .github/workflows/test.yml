@@ -1,0 +1,49 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  mods:
+    runs-on: ubuntu-latest
+    env:
+      CLAUDE_CODE_ENABLE_FUNCTION_HOOKS: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Claude Code
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Versions match the marketplace
+        # An installed copy only updates when its version changes, so a plugin
+        # and its marketplace entry must agree on it.
+        run: |
+          node -e '
+            const fs = require("fs")
+            const market = JSON.parse(fs.readFileSync(".claude-plugin/marketplace.json", "utf8"))
+            let bad = 0
+            for (const p of market.plugins) {
+              const own = JSON.parse(fs.readFileSync(`${p.source}/.claude-plugin/plugin.json`, "utf8")).version
+              if (own !== p.version) { console.error(`${p.name}: plugin.json ${own}, marketplace ${p.version}`); bad++ }
+            }
+            process.exit(bad)
+          '
+
+      - name: Validate the marketplace
+        run: claude plugin validate .
+
+      - name: Validate and test each mod
+        run: |
+          status=0
+          for dir in plugins/*/; do
+            name=$(basename "$dir")
+            echo "::group::$name"
+            claude plugin validate "$dir" || status=1
+            claude plugin test "$dir" || status=1
+            echo "::endgroup::"
+          done
+          exit $status

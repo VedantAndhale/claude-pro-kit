@@ -1,0 +1,50 @@
+name: Bug report
+description: A mod does not load, draws wrong, or does something unexpected
+labels: [bug]
+body:
+  - type: dropdown
+    id: mod
+    attributes:
+      label: Which mod?
+      options: [pro-hud, context-xray, tool-diet, output-diet, reread-guard, not sure]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+      description: A screenshot helps a lot, especially for pro-hud and /xray.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Error line
+      description: When a mod fails, Claude Code shows a dim line starting with the mod's name, such as `tool-diet: ...`. Paste it here if you saw one.
+      render: text
+  - type: input
+    id: claude
+    attributes:
+      label: Claude Code version
+      description: Run `claude --version`.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where are you running Claude Code?
+      options: [Desktop app, Terminal, VS Code, Other]
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [Windows, macOS, Linux]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Mod version
+      description: Shown in `/plugin` under Installed.
