@@ -59,12 +59,14 @@ describe('collision arithmetic', () => {
 // The engine's side: a folder of ledgers, a file with a modification time, an
 // edit tool that counts its runs, and a person who answers the question.
 const engine = (on: On, opts: { answer?: string; otherAt?: number; fileMtime?: number }) => {
+  // Ledgers are kept by file name: the engine resolves the folder per OS (a
+  // Windows path is not absolute on Linux), so only names are compared.
   const files = new Map<string, string>()
-  // The engine may hand paths over in either slash style on Windows.
   const norm = (p: string) => p.split('\\').join('/')
+  const name = (p: string) => norm(p).split('/').pop()!
+  const inLedgerDir = (p: string) => norm(p).endsWith('/collision-guard')
   const sent = { edits: 0, asked: 0, toasts: [] as string[] }
-  const DIR = 'C:/Users/dev/.claude/collision-guard'
-  if (opts.otherAt !== undefined) files.set(`${DIR}/other-chat-1234.json`, JSON.stringify(other(opts.otherAt, opts.otherAt)))
+  if (opts.otherAt !== undefined) files.set('other-chat-1234.json', JSON.stringify(other(opts.otherAt, opts.otherAt)))
   const store = new Map<string, unknown>()
 
   on('env.get', () => ({ value: 'C:/Users/dev/.claude' }))
@@ -85,20 +87,20 @@ const engine = (on: On, opts: { answer?: string; otherAt?: number; fileMtime?: n
   })
   on('fs.list', ($, e) => ({
     value: [...files.keys()]
-      .filter(p => p.startsWith(`${norm(e.path)}/`))
-      .map(p => ({ name: p.slice(norm(e.path).length + 1), kind: 'file' as const, size: 1, mtimeMs: NOW - MIN, isLink: false })),
+      .filter(() => inLedgerDir(e.path))
+      .map(p => ({ name: p, kind: 'file' as const, size: 1, mtimeMs: NOW - MIN, isLink: false })),
   }))
   on('fs.read', ($, e) => {
-    const text = files.get(norm((e as { path: string }).path))
+    const text = files.get(name((e as { path: string }).path))
     if (text === undefined) throw new Error('ENOENT')
     return { value: text } as never
   })
   on('fs.write', ($, e) => {
-    files.set(norm(e.path), e.text)
+    files.set(name(e.path), e.text)
     return { value: undefined }
   })
-  on('fs.stat', ($, e) => ({
-    value: { kind: 'file' as const, size: 10, mtimeMs: opts.fileMtime ?? opts.otherAt ?? NOW, isLink: false, realPath: e.path },
+  on('fs.stat', () => ({
+    value: { kind: 'file' as const, size: 10, mtimeMs: opts.fileMtime ?? opts.otherAt ?? NOW, isLink: false, realPath: FILE },
   }))
   on('tool.call', { tool: 'AskUserQuestion' }, ($, e) => {
     sent.asked += 1
@@ -110,20 +112,20 @@ const engine = (on: On, opts: { answer?: string; otherAt?: number; fileMtime?: n
     sent.edits += 1
     return { result: {} as never }
   })
-  return { sent, files, DIR }
+  return { sent, files }
 }
 
 const edit = { tool: 'Edit' as const, file_path: FILE, old_string: 'a', new_string: 'b' }
 
 describe('collision-guard', () => {
   test('no other chat: edits without asking, and records the edit', async ($, on) => {
-    const { sent, files, DIR } = engine(on, { answer: 'Proceed' })
+    const { sent, files } = engine(on, { answer: 'Proceed' })
     await $.session.start({ source: 'startup', cwd: 'D:\\mods' } as never)
     await $.tool.call(edit as never)
 
     expect(sent.asked).toBe(0)
     expect(sent.edits).toBe(1)
-    expect(JSON.parse(files.get(`${DIR}/this-chat-5678.json`)!).files[KEY].at).toBe(NOW)
+    expect(JSON.parse(files.get('this-chat-5678.json')!).files[KEY].at).toBe(NOW)
   })
 
   test('another chat edited it 4 min ago: asks, and Cancel refuses the edit', async ($, on) => {
