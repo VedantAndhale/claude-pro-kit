@@ -43,7 +43,7 @@ describe('budget arithmetic', () => {
     )
   })
 
-  test('parses /budget arguments', () => {
+  test('parses /turn-budget arguments', () => {
     expect(parse('8', DEFAULTS)?.points).toBe(8)
     expect(parse('tokens 1000000', DEFAULTS)?.tokens).toBe(1_000_000)
     expect(parse('off', DEFAULTS)?.isOff).toBe(true)
@@ -189,9 +189,9 @@ describe('turn-budget', () => {
     expect(sent.aborted).toEqual([])
   })
 
-  test('/budget sets the limit with a toast and no transcript text', async ($, on) => {
+  test('/turn-budget sets the limit with a toast and no transcript text', async ($, on) => {
     const sent = engine(on, 'Continue')
-    const ran = await $.command.run({ command: 'budget', args: '8' } as never)
+    const ran = await $.command.run({ command: 'turn-budget', args: '8' } as never)
 
     expect(ran.text).toBeUndefined()
     expect(sent.toasts.at(-1)).toContain('asks at +8 session points')

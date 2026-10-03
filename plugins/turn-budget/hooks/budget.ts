@@ -64,9 +64,9 @@ export const stopNote = (spend: Spend) =>
   `[turn-budget] The user stopped the previous turn at ${spend.points !== undefined ? `+${spend.points} session points` : `${n(spend.tokens)} uncached input tokens`}. Ask before continuing that work.`
 
 export const status = (spend: Spend, marks: Marks) =>
-  spend.points !== undefined ? `budget ${spend.points}/${marks.points} pts` : `budget ${n(spend.tokens)}/${n(marks.tokens)} tok`
+  spend.points !== undefined ? `turn budget ${spend.points}/${marks.points} pts` : `turn budget ${n(spend.tokens)}/${n(marks.tokens)} tok`
 
-/** `/budget 8`, `/budget tokens 1000000`, `/budget off|on`; undefined for anything else. */
+/** `/turn-budget 8`, `/turn-budget tokens 1000000`, `/turn-budget off|on`; undefined for anything else. */
 export const parse = (args: string, limits: Limits): Limits | undefined => {
   const [a, b] = args.trim().toLowerCase().split(/\s+/)
   if (a === 'off' || a === 'on') return { ...limits, isOff: a === 'off' }
@@ -77,5 +77,5 @@ export const parse = (args: string, limits: Limits): Limits | undefined => {
 
 export const describeLimits = (limits: Limits) =>
   limits.isOff
-    ? 'Turn budget is off. /budget on to turn it back on.'
-    : `Turn budget: asks at +${limits.points} session points or ${n(limits.tokens)} uncached input tokens per turn. /budget <points> · /budget tokens <n> · /budget off`
+    ? 'Turn budget is off. /turn-budget on to turn it back on.'
+    : `Turn budget: asks at +${limits.points} session points or ${n(limits.tokens)} uncached input tokens per turn. /turn-budget <points> · /turn-budget tokens <n> · /turn-budget off`

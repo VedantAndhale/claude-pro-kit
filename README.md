@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Ten small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Eleven small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -17,6 +17,7 @@ Ten small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that sho
 | **read-cap** | Stops Claude reading a file over 1,000 lines whole and gives it an outline tool, so it reads only the lines it needs; a retry still reads the whole file | Everywhere |
 | **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
 | **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
+| **turn-budget** | Asks before a single turn uses more than +5 session points, and stops that turn cleanly if you say so | Everywhere |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -39,6 +40,7 @@ In Claude Code:
 /plugin install read-cap@claude-pro-kit
 /plugin install session-receipt@claude-pro-kit
 /plugin install budget-guard@claude-pro-kit
+/plugin install turn-budget@claude-pro-kit
 /plugin install kit-updates@claude-pro-kit
 ```
 
@@ -175,6 +177,21 @@ budget-guard: 5-hour usage at 93%, resets in 1h 12m (your limit is 90%). Send th
 ```
 
 Sending the same message again goes through, so nothing is ever blocked for good. `/budget` shows the limit and the current readings, `/budget 80` sets the limit (kept across sessions), and `/budget on|off` switches it. Until Claude Code has reported a reading in the session, nothing is held.
+
+## turn-budget
+
+budget-guard looks at your session before a turn starts. turn-budget watches one turn while it runs, because a long agentic turn can quietly use a big share of your session between two of your messages. Before each model request in a turn, subagents' included, it checks what the turn has used. Once the turn crosses your limit, it asks before the next request is sent:
+
+```
+This turn has used 6 points of your session (20% → 26%) over 14 requests. Keep going?
+  Continue · Don't ask again · Stop here
+```
+
+- **Continue** raises the limit by one more step, so it asks again if the turn keeps going. **Don't ask again** holds for the rest of this turn. **Stop here** ends the turn without sending another request, and leaves Claude one line saying you stopped it, so the next turn asks before picking the work back up.
+- It only checks between requests, so a running command is never cut off.
+- Limits, whichever comes first: **+5 points** of the 5-hour session, or **500,000 uncached input tokens** for when the session meter lags behind. Cache reads aren't counted, since they cost a fraction of new input. Without a subscription there's no session reading, so only the token limit applies.
+- Anything but a clear Continue counts as Stop. A question nobody can answer (a `-p` run, or a dismissed dialog) never stops a turn; the status line notes it instead.
+- `/turn-budget` shows the limits, `/turn-budget 8` sets the points, `/turn-budget tokens 1000000` sets the token limit, and `/turn-budget off|on` switches it. Answers are toasts. While a turn runs, the status line reads `turn budget 3/5 pts`.
 
 ## kit-updates
 

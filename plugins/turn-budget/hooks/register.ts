@@ -87,7 +87,7 @@ export const register: Register = on => {
     start !== undefined && latest !== undefined ? Math.max(0, Math.round((latest - start) * 10) / 10) : undefined
 
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'budget', description: 'Turn budget: /budget · /budget <points> · /budget tokens <n> · /budget off|on' })
+    await $.command.register({ name: 'turn-budget', description: 'Turn budget: /turn-budget · /turn-budget <points> · /turn-budget tokens <n> · /turn-budget off|on' })
     return next(e)
   })
 
@@ -149,7 +149,7 @@ export const register: Register = on => {
   })
 
   // Answered with a toast and no text, so the command adds nothing to the conversation.
-  on('command.run', { command: 'budget' }, async ($, e) => {
+  on('command.run', { command: 'turn-budget' }, async ($, e) => {
     const current = await limitsOf($)
     const changed = parse(e.args, current)
     if (changed) await $.store.set('limits', changed)

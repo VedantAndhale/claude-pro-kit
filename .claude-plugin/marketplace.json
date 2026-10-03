@@ -25,7 +25,7 @@
       "name": "turn-budget",
       "source": "./plugins/turn-budget",
       "description": "Asks before one turn uses more than +5 session points or 500,000 uncached input tokens, and stops it cleanly if you say so.",
-      "version": "0.1.0"
+      "version": "0.1.1"
     },
     {
       "name": "tool-diet",

@@ -1,6 +1,6 @@
 {
   "name": "turn-budget",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Asks before a single turn uses more than +5 session points or 500,000 uncached input tokens, and stops it cleanly if you say so. Checks between requests, never mid-command.",
   "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
 }
