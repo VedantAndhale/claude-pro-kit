@@ -2,17 +2,20 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Three small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and stop two common kinds of waste. The mods themselves make no model calls and add nothing to the system prompt: every figure on screen is one Claude Code already reports, or a time the mod measured.
+Five small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt: every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
+| **tool-diet** | Loads tools you have not used lately on demand instead of with every request | Everywhere |
+| **context-xray** | `/xray` opens the exact breakdown of what fills your context window | Everywhere |
 | **pro-hud** | Live meters above the prompt for your 5-hour session, your week and the context window, plus a per-turn receipt of tokens in, cached and out | Claude desktop app |
 | **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
 
-In the [benchmark](#benchmark), the same task cost **33% less** with the mods on, averaged over three runs each.
+- With **tool-diet**, every request in a fresh session was **15,954 tokens smaller (−36%)**: 43,859 → 27,905, as the API reported. [Details](#tool-diet).
+- In the [benchmark](#benchmark), a debugging task cost **33% less** with output-diet and reread-guard on, averaged over three runs each.
 
 ## Install
 
@@ -20,12 +23,37 @@ In Claude Code:
 
 ```
 /plugin marketplace add VedantAndhale/claude-pro-kit
+/plugin install tool-diet@claude-pro-kit
+/plugin install context-xray@claude-pro-kit
 /plugin install pro-hud@claude-pro-kit
 /plugin install output-diet@claude-pro-kit
 /plugin install reread-guard@claude-pro-kit
 ```
 
 Install any one on its own; they do not depend on each other. Mods are not sandboxed, so read the code before installing: each mod is a single file under `plugins/<name>/hooks/`.
+
+## tool-diet
+
+Every tool listed in front sends its whole description and schema with every request. A deferred tool is listed by name only, and Claude loads it through ToolSearch when it needs it; Claude Code already does this for most MCP tools. tool-diet does it for the rest of the tools you are not using: anything outside the core set (Bash, PowerShell, Read, Edit, Write, Glob, Grep, Agent, Skill, ToolSearch, TodoWrite, AskUserQuestion) that you have not used in your last five sessions.
+
+Measured with one prompt, "Reply with just OK.", in a fresh session, as the API reported each request:
+
+| | Prompt tokens per request |
+| --- | ---: |
+| Without tool-diet | 43,859 |
+| With tool-diet | 27,905 |
+| **Change** | **−15,954 (−36%)** |
+
+On that setup, the largest tool moved was `Artifact`, whose description alone is 19,870 characters. What moves depends on your tools and your habits; `/xray` shows yours.
+
+- The first time a deferred tool is used in a session costs one extra step, a ToolSearch call. After that it stays loaded for the session.
+- Using a tool keeps it loaded for your next five sessions, so the set follows what you actually use.
+- The choice is made once per tool per session, so the prompt cache is never disturbed mid-session. Changes apply from the next session.
+- `/tool-diet` lists what is on demand this session; `/tool-diet keep <tool>` always loads one, `unkeep` undoes it, and `/tool-diet off|on` switches it. Answers are toasts, so they add nothing to the conversation.
+
+## context-xray
+
+`/xray` opens a pane with the exact breakdown `/context` computes: what is sent with every request (system prompt, tools, MCP tools, memory files, skills, messages), what is loaded on demand, which MCP tools load every time, and each memory file's size. It measures when the pane opens and when you press Refresh (or `r`), never in the background, because the exact count sends one token-count request per tool and memory file.
 
 ## pro-hud
 

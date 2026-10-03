@@ -1,0 +1,7 @@
+{
+  "name": "context-xray",
+  "version": "0.1.0",
+  "description": "A pane with the exact breakdown of what fills Claude's context: system prompt, tools, memory files, skills, messages, and which tools load on every request.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" },
+  "types": "./types/index.d.ts"
+}
