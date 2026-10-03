@@ -29,16 +29,29 @@ describe('budget arithmetic', () => {
   })
 
   test('says what the turn used in exact figures', () => {
-    expect(question({ points: 6, tokens: 0, requests: 14 }, 20, 26)).toBe(
-      'This turn has used 6 points of your session (20% → 26%) over 14 requests. Keep going?',
+    const marks = firstMarks(DEFAULTS)
+    expect(question({ points: 6, tokens: 0, requests: 14 }, marks, 20, 26)).toBe(
+      'This turn has used 6 points of your session (20% → 26%, limit +5) over 14 requests. Keep going?',
     )
-    expect(question({ points: undefined, tokens: 512_000, requests: 9 }, undefined, undefined)).toBe(
-      'This turn has used 512,000 uncached input tokens over 9 requests. Keep going?',
+    expect(question({ points: undefined, tokens: 512_000, requests: 9 }, marks, undefined, undefined)).toBe(
+      'This turn has used 512,000 uncached input tokens (limit 500,000) over 9 requests. Keep going?',
+    )
+  })
+
+  test('names the token limit when tokens crossed it, even with a session reading', () => {
+    // The live run: stopped by 5,615 tokens over a 5,000 limit while at +2 points.
+    const marks = { points: 5, tokens: 5_000 }
+    const spend = { points: 2, tokens: 5_615, requests: 6 }
+    expect(question(spend, marks, 40, 42)).toBe(
+      'This turn has used 5,615 uncached input tokens (limit 5,000) over 6 requests. Keep going?',
+    )
+    expect(stopNote(spend, marks)).toBe(
+      '[turn-budget] The user stopped the previous turn at 5,615 uncached input tokens. Ask before continuing that work.',
     )
   })
 
   test('the note left for Claude on Stop is one line with the exact figure', () => {
-    expect(stopNote({ points: 6, tokens: 0, requests: 14 })).toBe(
+    expect(stopNote({ points: 6, tokens: 0, requests: 14 }, firstMarks(DEFAULTS))).toBe(
       '[turn-budget] The user stopped the previous turn at +6 session points. Ask before continuing that work.',
     )
   })

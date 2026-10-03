@@ -46,7 +46,7 @@ async function check($: EngineInterface, t: Turn, latest: number | undefined): P
   t.asking = (async () => {
     let answer: string
     try {
-      answer = await $.ui.ask(question(t.spend, t.start, latest), {
+      answer = await $.ui.ask(question(t.spend, t.marks, t.start, latest), {
         options: [CONTINUE, CONTINUE_QUIETLY, STOP],
         header: 'Turn budget',
       })
@@ -61,7 +61,7 @@ async function check($: EngineInterface, t: Turn, latest: number | undefined): P
     if (choice === 'stop') {
       t.isStopped = true
       await $.session
-        .append({ message: { type: 'user', content: [{ type: 'text', text: stopNote(t.spend) }] } })
+        .append({ message: { type: 'user', content: [{ type: 'text', text: stopNote(t.spend, t.marks) }] } })
         .catch(() => undefined)
       await $.turn.abort({ turnId: t.id }).catch(() => undefined)
       $.ui.status(undefined)

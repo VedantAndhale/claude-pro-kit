@@ -25,6 +25,12 @@ export const firstMarks = (limits: Limits): Marks => ({ points: limits.points, t
 export const isOver = (spend: Spend, marks: Marks): boolean =>
   (spend.points !== undefined && spend.points >= marks.points) || spend.tokens >= marks.tokens
 
+/** Which limit the turn crossed: the one to name when asking and in the note. Points first when both are. */
+export type Crossed = 'points' | 'tokens'
+
+export const crossed = (spend: Spend, marks: Marks): Crossed =>
+  spend.points !== undefined && spend.points >= marks.points ? 'points' : 'tokens'
+
 export const nextMarks = (spend: Spend, marks: Marks, limits: Limits): Marks => {
   let { points, tokens } = marks
   while (spend.points !== undefined && spend.points >= points) points += limits.points
@@ -42,11 +48,11 @@ export const uncached = (usage: ModelUsageLike) => usage.input_tokens + (usage.c
 
 const n = (value: number) => value.toLocaleString('en-US')
 
-export const question = (spend: Spend, start: number | undefined, now: number | undefined) => {
+export const question = (spend: Spend, marks: Marks, start: number | undefined, now: number | undefined) => {
   const used =
-    spend.points !== undefined && start !== undefined && now !== undefined
-      ? `${spend.points} ${spend.points === 1 ? 'point' : 'points'} of your session (${start}% → ${now}%)`
-      : `${n(spend.tokens)} uncached input tokens`
+    crossed(spend, marks) === 'points' && start !== undefined && now !== undefined
+      ? `${spend.points} ${spend.points === 1 ? 'point' : 'points'} of your session (${start}% → ${now}%, limit +${marks.points})`
+      : `${n(spend.tokens)} uncached input tokens (limit ${n(marks.tokens)})`
   return `This turn has used ${used} over ${spend.requests} ${spend.requests === 1 ? 'request' : 'requests'}. Keep going?`
 }
 
@@ -60,8 +66,8 @@ export type Choice = 'continue' | 'quiet' | 'stop'
 export const choiceOf = (answer: string): Choice =>
   answer === CONTINUE ? 'continue' : answer === CONTINUE_QUIETLY ? 'quiet' : 'stop'
 
-export const stopNote = (spend: Spend) =>
-  `[turn-budget] The user stopped the previous turn at ${spend.points !== undefined ? `+${spend.points} session points` : `${n(spend.tokens)} uncached input tokens`}. Ask before continuing that work.`
+export const stopNote = (spend: Spend, marks: Marks) =>
+  `[turn-budget] The user stopped the previous turn at ${crossed(spend, marks) === 'points' ? `+${spend.points} session points` : `${n(spend.tokens)} uncached input tokens`}. Ask before continuing that work.`
 
 export const status = (spend: Spend, marks: Marks) =>
   spend.points !== undefined ? `turn budget ${spend.points}/${marks.points} pts` : `turn budget ${n(spend.tokens)}/${n(marks.tokens)} tok`

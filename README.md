@@ -183,7 +183,7 @@ Sending the same message again goes through, so nothing is ever blocked for good
 budget-guard looks at your session before a turn starts. turn-budget watches one turn while it runs, because a long agentic turn can quietly use a big share of your session between two of your messages. Before each model request in a turn, subagents' included, it checks what the turn has used. Once the turn crosses your limit, it asks before the next request is sent:
 
 ```
-This turn has used 6 points of your session (20% → 26%) over 14 requests. Keep going?
+This turn has used 6 points of your session (20% → 26%, limit +5) over 14 requests. Keep going?
   Continue · Don't ask again · Stop here
 ```
 
