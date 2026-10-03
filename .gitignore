@@ -1,0 +1,4 @@
+node_modules/
+.claude/types/
+bench/results/
+.DS_Store

@@ -1,0 +1,6 @@
+{
+  "name": "output-diet",
+  "version": "0.1.0",
+  "description": "Trims long shell output before Claude reads it: keeps the head, the tail and every error line, saves the full output to a file Claude can open.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}

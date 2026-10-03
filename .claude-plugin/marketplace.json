@@ -1,0 +1,28 @@
+{
+  "name": "claude-pro-kit",
+  "owner": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" },
+  "metadata": {
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, shorter shell output, no repeat file reads. Zero tokens spent by the mods themselves.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "pro-hud",
+      "source": "./plugins/pro-hud",
+      "description": "Desktop heads-up display: live session, week and context meters, per-turn token receipt, usage in the spinner, compact tool rows.",
+      "version": "0.2.0"
+    },
+    {
+      "name": "output-diet",
+      "source": "./plugins/output-diet",
+      "description": "Trims long shell output before Claude reads it (head, tail and error lines kept); the full output is saved to a file.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "reread-guard",
+      "source": "./plugins/reread-guard",
+      "description": "Skips Claude's identical re-read of a file that has not changed; a deliberate retry still goes through.",
+      "version": "0.1.0"
+    }
+  ]
+}
