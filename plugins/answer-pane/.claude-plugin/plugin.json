@@ -1,7 +1,7 @@
 {
   "name": "answer-pane",
-  "version": "0.1.1",
-  "description": "Explanations as visual pages in a pane beside the chat: diagrams drawn in place, the full page one click away. No model calls.",
+  "version": "0.2.0",
+  "description": "Explain, plan and ELI5 pages drawn natively in a side pane: diagrams in place, plan decisions as buttons, Respond fills the prompt box. No model calls.",
   "author": {
     "name": "Vedant Andhale",
     "url": "https://github.com/VedantAndhale"

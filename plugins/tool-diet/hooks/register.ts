@@ -108,7 +108,9 @@ export const register: Register = on => {
 
   on('tool.describe', async ($, e, next) => {
     const described = await next(e)
-    if (e.isDeferred || described.isDeferred) return described
+    // Already on demand, or another plugin explicitly keeps it listed (answer-pane
+    // lists show_page so Claude can choose a page on its own): leave it.
+    if (e.isDeferred || described.isDeferred !== undefined) return described
     if (!shouldDefer(e.tool, await recall($))) return described
 
     moved.set(e.tool, sourceOf(e.provider))

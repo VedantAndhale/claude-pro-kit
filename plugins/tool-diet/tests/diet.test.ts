@@ -84,6 +84,14 @@ describe('tool-diet', () => {
     expect((await $.tool.describe(describeTool('Bash') as never)).isDeferred).toBeUndefined()
   })
 
+  test("leaves a tool another plugin explicitly keeps listed", async ($, on) => {
+    on('tool.describe', { tool: 'mcp__answer-pane__show_page' }, ($, e) => ({ description: e.description, isDeferred: false }))
+    engine(on)
+    await $.session.start({ source: 'startup', cwd: 'C:/repo' } as never)
+
+    expect((await $.tool.describe(describeTool('mcp__answer-pane__show_page') as never)).isDeferred).toBe(false)
+  })
+
   test('keeps a tool loaded in the sessions after it was used', async ($, on) => {
     engine(on)
     on('tool.call', () => ({ result: {} as never }))

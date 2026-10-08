@@ -19,7 +19,7 @@ Thirteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) tha
 | **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
 | **turn-budget** | Asks before a single turn uses more than +5 session points, and stops that turn cleanly if you say so | Everywhere |
 | **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
-| **answer-pane** | Explanations as visual pages in a pane beside the chat, diagrams drawn in place | Desktop app (text in the terminal) |
+| **answer-pane** | Explain, plan and ELI5 pages drawn natively in a side pane; plans have decision buttons and Respond fills the prompt box | Desktop app (no diagrams in the terminal) |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -215,23 +215,30 @@ README.md was changed by another chat 4 min ago (chat 7dc9d8a1 in mods). Edit it
 
 ## answer-pane
 
-When an answer needs a picture (a process, a comparison, a hierarchy, three or more linked ideas), Claude writes a short Markdown draft, and a bundled renderer turns it into a one-page explainer. The mod then shows that page in a pane beside the chat:
+Three kinds of page in one side pane, drawn natively: panel cards, diagrams, tables, callouts, timelines, trees and bars, in the app's own light or dark look. It follows [Andrej Karpathy's post](https://x.com/karpathy/status/2105819303471976479) on reading model output: clear writing, then diagrams, then pages.
 
-- Claude sends the draft through a tool, not a Bash command, so there's no permission prompt and the draft isn't echoed into the transcript.
-- `flow` and `sequence` diagrams are drawn in the pane, in the page's own styles, light or dark. The other parts show as text. **Open in browser** (`o`) shows the full page.
-- If the renderer rejects a line, its exact fix goes back to Claude, which corrects the draft and tries again.
-- `/pages` lists this session's pages. Pages are saved under `~/.claude/answer-pane/`. Needs Node.js 20 or newer.
-- The renderer in `vendor/` is MIT-licensed; its license is in `vendor/`.
+| Kind | Ask with | What you get |
+| --- | --- | --- |
+| **Explain** | Any question with linked ideas, a process, or a comparison (Claude picks a page on its own) | A one-page explainer with diagrams |
+| **Plan** | `/plan-page <what to build>` | The plan as parts, with 2–5 decisions as buttons. Strike parts, comment on them, then **Respond** (`r`) puts your answer in the prompt box. Nothing is sent until you press Enter, and Claude builds only after you do. |
+| **ELI5** | `/eli5 <topic>` | Big pictures, few words, no jargon |
 
-What it costs, measured with your setup's prompt for "Reply with just OK.":
+The plan and ELI5 kinds follow Anthropic's `html-plan` and `eli5` skills from [claude-plugins-community](https://github.com/anthropics/claude-plugins-community).
 
-| | Prompt tokens per request |
+- **Writing check:** pages are checked against "80% of ASD-STE100" (Karpathy's tip). Long, passive or vague sentences go back to Claude to fix once. `/pages style off|80|strict` changes it.
+- **In a plan, a decision you don't touch is reported as "not answered; default kept"**, not as agreement. Comments reach Claude quoted, as feedback, never as instructions.
+- `/pages` lists this session's pages. **Browser** (`o`) opens the full page if you want it; you never need to. Pages are saved under `~/.claude/answer-pane/`. Needs Node.js 20 or newer. The terminal shows everything except diagrams, which it names.
+- The bundled renderer in `vendor/` is MIT-licensed; its license is in `vendor/`.
+
+What it costs per request, measured with `claude -p "Reply with just OK."`:
+
+| | Prompt tokens |
 | --- | ---: |
-| Without answer-pane | 24,285 |
-| `/pages auto on` (default): Claude can choose a page on its own | 25,604 (+1,319) |
-| `/pages auto off`: pages only when you ask for one | 25,066 (+781) |
+| Without answer-pane | 27,260 |
+| With answer-pane (default): Claude can choose a page on its own | 27,837 (+577) |
+| `/pages auto off`: pages only when you ask | +174 |
 
-The tool has to be listed for Claude to pick it unprompted. That's the default, and `/pages auto off` takes it out of every request from the next session. The mod itself makes no model calls: the draft is Claude's answer, and the rendering happens on your machine.
+The mod makes no model calls: the draft is Claude's answer, and drawing happens on your machine.
 
 ## kit-updates
 

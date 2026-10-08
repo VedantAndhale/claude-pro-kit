@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "plugins": [
     {
@@ -31,7 +31,7 @@
       "name": "tool-diet",
       "source": "./plugins/tool-diet",
       "description": "Loads tools you have not used lately on demand through ToolSearch instead of with every request; core tools and recently used ones stay loaded.",
-      "version": "0.1.2"
+      "version": "0.1.3"
     },
     {
       "name": "context-xray",
@@ -84,8 +84,8 @@
     {
       "name": "answer-pane",
       "source": "./plugins/answer-pane",
-      "description": "Explanations as visual pages in a pane beside the chat: diagrams drawn in place, the full page one click away.",
-      "version": "0.1.1"
+      "description": "Explain, plan and ELI5 pages drawn natively in a side pane; plan decisions as buttons, Respond fills the prompt box.",
+      "version": "0.2.0"
     }
   ]
 }
