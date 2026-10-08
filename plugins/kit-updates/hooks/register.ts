@@ -77,14 +77,20 @@ async function notify($: EngineInterface) {
   const lines: string[] = []
   const updates = findUpdates(got.installed, got.catalog)
   // On by default: updates to mods you already installed go in by themselves.
-  // New mods are only announced; installing one stays your choice.
+  // New mods are only announced unless you opted in with /kit-update auto-new on.
   const isAuto = ((await $.store.get('auto')) as boolean | undefined) ?? true
-  if (updates.length > 0 && isAuto) void install($)
-  else if (updates.length > 0) lines.push(describeUpdates(updates))
+  const isAutoNew = ((await $.store.get('autoNew')) as boolean | undefined) ?? false
+  if (updates.length > 0 && !isAuto) lines.push(describeUpdates(updates))
 
   const seen = (await $.store.get('seenMods')) as string[] | undefined
   const fresh = findNewMods(got.installed, got.catalog, seen)
-  if (fresh.length > 0) lines.push(describeNewMods(fresh))
+  if (fresh.length > 0 && !isAutoNew) lines.push(describeNewMods(fresh))
+
+  // One after the other: both refresh the same marketplace clone.
+  void (async () => {
+    if (updates.length > 0 && isAuto) await install($)
+    if (fresh.length > 0 && isAutoNew) await installNew($, fresh)
+  })()
   await $.store.set('seenMods', [...new Set([...(seen ?? []), ...(got.catalog.plugins ?? []).map(p => p.name)])])
 
   for (const text of lines) {
@@ -125,11 +131,38 @@ async function install($: EngineInterface) {
   $.ui.toast(failed.length === 0 ? `${MARKETPLACE}: updated. Restart to apply.` : `${MARKETPLACE}: some updates failed, see the transcript.`)
 }
 
+// Installs mods that joined the kit since the last check. Only mods never seen
+// before: one you uninstalled is not put back.
+async function installNew($: EngineInterface, names: string[]) {
+  const run = (argv: string[]) => $.process.run(argv, { timeoutMs: 120_000 }).catch(err => ({ exitCode: 1, stdout: '', stderr: String(err) }))
+
+  const refreshed = await run(['claude', 'plugin', 'marketplace', 'update', MARKETPLACE])
+  if (refreshed.exitCode !== 0) {
+    $.ui.log(`${MARKETPLACE}: marketplace refresh failed: ${refreshed.stderr.trim() || refreshed.stdout.trim()}`)
+    return
+  }
+
+  const done: string[] = []
+  const failed: string[] = []
+  for (const name of names) {
+    const result = await run(['claude', 'plugin', 'install', `${name}@${MARKETPLACE}`])
+    if (result.exitCode === 0) done.push(name)
+    else failed.push(`${name} (${result.stderr.trim() || result.stdout.trim()})`)
+  }
+
+  if (done.length > 0) {
+    const text = `${MARKETPLACE}: installed new ${done.length === 1 ? 'mod' : 'mods'} ${done.join(', ')}. Restart Claude Code to load ${done.length === 1 ? 'it' : 'them'}.`
+    $.ui.toast(text)
+    $.ui.log(text)
+  }
+  if (failed.length > 0) $.ui.log(`${MARKETPLACE}: install failed for ${failed.join(', ')}.`)
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'kit-update',
-      description: 'Update the installed claude-pro-kit mods now · /kit-update auto on|off',
+      description: 'Update the installed claude-pro-kit mods now · /kit-update auto on|off · /kit-update auto-new on|off',
     })
     void notify($)
     return next(e)
@@ -141,6 +174,11 @@ export const register: Register = on => {
     if (a === 'auto' && (b === 'on' || b === 'off')) {
       await $.store.set('auto', b === 'on')
       $.ui.toast(b === 'on' ? `${MARKETPLACE}: updates install by themselves at session start.` : `${MARKETPLACE}: updates are announced; /kit-update installs them.`)
+      return {}
+    }
+    if (a === 'auto-new' && (b === 'on' || b === 'off')) {
+      await $.store.set('autoNew', b === 'on')
+      $.ui.toast(b === 'on' ? `${MARKETPLACE}: new mods install by themselves at session start.` : `${MARKETPLACE}: new mods are announced; installing one stays your choice.`)
       return {}
     }
     $.ui.toast(`${MARKETPLACE}: checking for updates…`)
