@@ -1,0 +1,6 @@
+{
+  "name": "write-guard",
+  "version": "0.1.0",
+  "description": "Steers Claude to Edit instead of rewriting an existing file in full with Write: the first rewrite in a conversation goes through with a one-line note, a later one is held back once; a deliberate retry still goes through.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}

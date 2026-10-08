@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Fourteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Fifteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -14,6 +14,7 @@ Fourteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) tha
 | **pro-hud** | Live meters above the prompt for your 5-hour session, your week and the context window, plus a per-turn receipt of tokens in, cached and out | Claude desktop app |
 | **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
+| **write-guard** | Steers Claude to `Edit` instead of rewriting an existing file in full with `Write`; a deliberate rewrite still goes through | Everywhere |
 | **cache-clock** | Counts down until the prompt cache expires; once it has, shows exactly how many tokens your next message will re-send uncached | Everywhere |
 | **read-cap** | Stops Claude reading a file over 1,000 lines whole and gives it an outline tool, so it reads only the lines it needs; a retry still reads the whole file | Everywhere |
 | **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
@@ -41,6 +42,7 @@ In Claude Code:
 /plugin install pro-hud@claude-pro-kit
 /plugin install output-diet@claude-pro-kit
 /plugin install reread-guard@claude-pro-kit
+/plugin install write-guard@claude-pro-kit
 /plugin install cache-clock@claude-pro-kit
 /plugin install read-cap@claude-pro-kit
 /plugin install session-receipt@claude-pro-kit
@@ -160,6 +162,17 @@ api.ts unchanged since you read it; use that copy. If it's gone from context, re
 ```
 
 The status line counts them: `2 re-reads skipped`.
+
+## write-guard
+
+`Write` sends the whole file as Claude's output, the most expensive kind of token; `Edit` sends only the lines that change. Claude sometimes rewrites a file it has already read in full to change a few lines. In the author's own 272 session transcripts, 141 writes rewrote a file Claude had already read or written (999,273 characters), and 112 of them followed an earlier rewrite in the same session. Of the 512,847 characters in the rewrites whose previous version was in the transcript, 171,325 had changed.
+
+A hook runs after Claude has written the content, so write-guard cannot save the rewrite it sees; it stops the ones after it:
+
+- The first rewrite of an existing file in a conversation goes through, with one line for Claude after the result: `You rewrote all of api.ts. For changes to an existing file use Edit: it sends only the changed lines.`
+- A later rewrite is held back once, and Claude is told: `api.ts exists; change it with Edit, not a full Write. If a full rewrite is intended, retry the same Write.` Retrying the same Write goes through.
+- New files, and files under 2,048 bytes, are never touched. A subagent has its own conversation and its own first rewrite; a compaction or `/clear` starts over.
+- The status line counts them: `1 full rewrite held back`.
 
 ## cache-clock
 

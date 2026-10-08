@@ -5,8 +5,8 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.9.0"
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, shorter shell output, capped and repeat file reads, edits in place of full-file rewrites, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
+    "version": "0.10.0"
   },
   "plugins": [
     {
@@ -49,6 +49,12 @@
       "name": "reread-guard",
       "source": "./plugins/reread-guard",
       "description": "Skips Claude's identical re-read of a file that has not changed; a deliberate retry still goes through.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "write-guard",
+      "source": "./plugins/write-guard",
+      "description": "Steers Claude to Edit instead of rewriting an existing file in full: the first rewrite in a conversation gets a one-line note, a later one is held back once; a deliberate retry still goes through.",
       "version": "0.1.0"
     },
     {
