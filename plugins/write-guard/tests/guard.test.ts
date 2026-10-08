@@ -10,9 +10,10 @@ const engine = (on: On) => {
   const sizes: Record<string, number | undefined> = { [FILE]: 6000, [OTHER]: 6000 }
   const runs = { count: 0 }
   on('fs.stat', ($, e) => {
-    const path = e.path.split('\\').join('/')
-    const size = sizes[path]
-    return size === undefined
+    // Matched by name: off Windows the engine resolves C:/... against the cwd.
+    const path = [FILE, OTHER].find(f => e.path.split('\\').join('/').endsWith(f.slice(2)))
+    const size = path === undefined ? undefined : sizes[path]
+    return path === undefined || size === undefined
       ? { deny: 'ENOENT' }
       : { value: { kind: 'file' as const, size, mtimeMs: 1_000, isLink: false, realPath: path } }
   })
