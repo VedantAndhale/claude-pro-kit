@@ -1,0 +1,10 @@
+{
+  "name": "compact-keeper",
+  "version": "0.1.0",
+  "description": "After a compaction, adds one message with exact facts from before it: your latest prompt in full, up to 4 earlier ones, the files edited, the todo list and the last failed shell command. At most 4,000 characters. No model calls.",
+  "author": {
+    "name": "Vedant Andhale",
+    "url": "https://github.com/VedantAndhale"
+  },
+  "types": "./types/index.d.ts"
+}
