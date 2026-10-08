@@ -433,7 +433,7 @@ The mod makes no model calls: the draft is Claude's answer, and drawing happens 
 
 This is the one mod in the kit that makes a model call, and only when you press it.
 
-A row above the prompt box shows **[Improve]**, and **[Undo]** after a rewrite. `ctrl+x tab` focuses the row; then `i` improves, `u` undoes, and `c` cancels a call in progress. `/polish <prompt>` does the same from a command. The row stays up while Claude works, so you can polish the next prompt as you type it. In the terminal it shows only while the box holds a draft.
+A row above the prompt box shows **[Improve]**, and **[Undo]** after a rewrite. `ctrl+x tab` focuses the row; then `i` improves, `u` undoes, and `c` cancels a call in progress. `/polish <prompt>` does the same from a command. In the desktop app the same buttons also sit in the footer, at its right beside the model and Send. The row stays up while Claude works, so you can polish the next prompt as you type it. In the terminal it shows only while the box holds a draft.
 
 Improve sends the draft to Opus at low effort with a bundled copy of the [prompt-master](https://github.com/nidhinjs/prompt-master) rules by nidhinjs (MIT; its license is in `LICENSE-prompt-master`), and puts the rewrite back in the box. It never sends it: you read it, edit it, or press Undo to get your original back.
 

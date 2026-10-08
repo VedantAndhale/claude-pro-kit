@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, quiet flags on noisy commands, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, a local status pane for background tasks, exact facts kept after a compaction, the right GitHub account per repository, update notices, and an Improve button for prompts. Only prompt-polish calls a model, once per press; the other mods spend no tokens themselves.",
-    "version": "0.14.1"
+    "version": "0.14.2"
   },
   "plugins": [
     {
@@ -139,7 +139,7 @@
       "name": "prompt-polish",
       "source": "./plugins/prompt-polish",
       "description": "An Improve button above the prompt (and /polish) rewrites your draft with Opus at low effort (or Haiku or Sonnet) using the prompt-master rules and puts it back in the box, never sent; each press is one model call, with its exact tokens shown.",
-      "version": "0.1.1"
+      "version": "0.1.2"
     }
   ]
 }
