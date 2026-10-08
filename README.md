@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Sixteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Seventeen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -16,6 +16,7 @@ Sixteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that
 | **output-diet** | Trims long shell output, search results and subagent reports before Claude reads them, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
 | **write-guard** | Steers Claude to `Edit` instead of rewriting an existing file in full with `Write`; a deliberate rewrite still goes through | Everywhere |
+| **loop-guard** | Holds back a shell command that already failed twice in a row, so Claude changes approach | Everywhere |
 | **cache-clock** | Counts down until the prompt cache expires; once it has, shows exactly how many tokens your next message will re-send uncached | Everywhere |
 | **read-cap** | Stops Claude reading a file over 1,000 lines whole and gives it an outline tool, so it reads only the lines it needs; a retry still reads the whole file | Everywhere |
 | **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
@@ -46,6 +47,7 @@ In Claude Code:
 /plugin install output-diet@claude-pro-kit
 /plugin install reread-guard@claude-pro-kit
 /plugin install write-guard@claude-pro-kit
+/plugin install loop-guard@claude-pro-kit
 /plugin install cache-clock@claude-pro-kit
 /plugin install read-cap@claude-pro-kit
 /plugin install session-receipt@claude-pro-kit
@@ -195,6 +197,20 @@ A hook runs after Claude has written the content, so write-guard cannot save the
 - A later rewrite is held back once, and Claude is told: `api.ts exists; change it with Edit, not a full Write. If a full rewrite is intended, retry the same Write.` Retrying the same Write goes through.
 - New files, and files under 2,048 bytes, are never touched. A subagent has its own conversation and its own first rewrite; a compaction or `/clear` starts over.
 - The status line counts them: `1 full rewrite held back`.
+
+## loop-guard
+
+Each retry of a failing command re-sends the whole conversation, and the same command usually fails the same way. In the author's 272 session transcripts, 10 commands failed 3 or more times, 38 runs between them.
+
+Once the exact same `Bash` or `PowerShell` command has failed twice in a row, the next try is held back once, and Claude is told:
+
+```
+This exact command failed 2 times in a row. Change the approach instead of rerunning it. If a rerun is intended, retry the same command.
+```
+
+- Retrying the same command straight after the hold goes through, for a command that is meant to be rerun.
+- A success clears the count, and each command is counted on its own. A subagent counts its own commands; a compaction or `/clear` starts over.
+- The status line counts them: `1 failing retry held back`.
 
 ## cache-clock
 

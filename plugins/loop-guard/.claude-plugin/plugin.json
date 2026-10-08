@@ -1,0 +1,6 @@
+{
+  "name": "loop-guard",
+  "version": "0.1.0",
+  "description": "Holds back a shell command once when the exact same command already failed twice in a row, and tells Claude to change approach; retrying it still goes through.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}

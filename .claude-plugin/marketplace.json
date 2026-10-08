@@ -5,8 +5,8 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, capped and repeat file reads, edits in place of full-file rewrites, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.12.0"
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
+    "version": "0.13.0"
   },
   "plugins": [
     {
@@ -61,6 +61,12 @@
       "name": "write-guard",
       "source": "./plugins/write-guard",
       "description": "Steers Claude to Edit instead of rewriting an existing file in full: the first rewrite in a conversation gets a one-line note, a later one is held back once; a deliberate retry still goes through.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "loop-guard",
+      "source": "./plugins/loop-guard",
+      "description": "Holds back a shell command once when the exact same command already failed twice in a row, and tells Claude to change approach; retrying it still goes through.",
       "version": "0.1.0"
     },
     {
