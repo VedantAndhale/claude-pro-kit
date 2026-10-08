@@ -1,0 +1,6 @@
+{
+  "name": "gh-account",
+  "version": "0.1.0",
+  "description": "Runs each git push, pull, fetch, clone and gh command as the logged-in GitHub account that owns or belongs to the repository's owner, so Claude stops switching gh accounts and retrying failed pushes.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}
