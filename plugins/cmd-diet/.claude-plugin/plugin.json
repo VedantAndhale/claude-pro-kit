@@ -1,0 +1,6 @@
+{
+  "name": "cmd-diet",
+  "version": "0.1.0",
+  "description": "Adds quiet flags to noisy shell commands before they run (git status, pytest, cargo, npm install, mvn, curl, wget, docker pull), so Claude reads short output from the start; errors, failures and warnings stay in full.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}

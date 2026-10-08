@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Seventeen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Eighteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -17,6 +17,7 @@ Seventeen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) th
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
 | **write-guard** | Steers Claude to `Edit` instead of rewriting an existing file in full with `Write`; a deliberate rewrite still goes through | Everywhere |
 | **loop-guard** | Holds back a shell command that already failed twice in a row, so Claude changes approach | Everywhere |
+| **cmd-diet** | Adds quiet flags to noisy shell commands before they run, so Claude reads short output from the start; errors, failures and warnings stay in full | Everywhere |
 | **cache-clock** | Counts down until the prompt cache expires; once it has, shows exactly how many tokens your next message will re-send uncached | Everywhere |
 | **read-cap** | Stops Claude reading a file over 1,000 lines whole and gives it an outline tool, so it reads only the lines it needs; a retry still reads the whole file | Everywhere |
 | **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
@@ -48,6 +49,7 @@ In Claude Code:
 /plugin install reread-guard@claude-pro-kit
 /plugin install write-guard@claude-pro-kit
 /plugin install loop-guard@claude-pro-kit
+/plugin install cmd-diet@claude-pro-kit
 /plugin install cache-clock@claude-pro-kit
 /plugin install read-cap@claude-pro-kit
 /plugin install session-receipt@claude-pro-kit
@@ -211,6 +213,28 @@ This exact command failed 2 times in a row. Change the approach instead of rerun
 - Retrying the same command straight after the hold goes through, for a command that is meant to be rerun.
 - A success clears the count, and each command is counted on its own. A subagent counts its own commands; a compaction or `/clear` starts over.
 - The status line counts them: `1 failing retry held back`.
+
+## cmd-diet
+
+output-diet trims long output after a command has run; cmd-diet keeps the noise from being printed at all. Before a `Bash` or `PowerShell` command runs, a known noisy command gets its own quiet flags, which drop progress lines and keep errors, test failures and warnings:
+
+| Command | Runs as | Output, measured |
+| --- | --- | --- |
+| `git status` | `git status --short --branch` | 415 to 58 characters |
+| `pytest` | `pytest -q` | 1,063 to 495 characters, failure details unchanged |
+| `cargo build` / `test` / `check` / `clippy` / `run` | `cargo build -q` | 197 to 0 characters on success, warnings unchanged |
+| `npm install` / `ci` | `npm install --no-audit --no-fund` | 62 to 18 characters |
+| `curl` (Bash only) | `curl -sS` | 1,049 to 577 characters, the progress meter removed |
+| `mvn` | `mvn -B -ntp` | not measured: drops download progress |
+| `wget` (Bash only) | `wget -nv` | not measured: one line per file |
+| `docker pull` | `docker pull -q` | not measured: drops layer progress |
+
+In a live headless run (`git status && python -m pytest` on 41 test files, one failing), the request cost 41,535 tokens without cmd-diet and 40,571 with it, by the API's `usage`, and both runs named the failing test and its reason correctly. The shorter output stays in context, so every later request in the session sends less too.
+
+- Each step of a `&&`, `||` or `;` chain is handled on its own. A step that pipes, redirects or substitutes (`| grep`, `> file`, `$(...)`) is left alone, since something else reads its output; `2>&1` is fine.
+- A command that already sets its output level (`git status --porcelain`, `pytest -v`, `curl -fsSL`, `npm install --silent`) is left alone, and a flag already present is not added twice.
+- If a tool rejects a flag (an old version), that rule stops for the session and Claude's retry runs the command as typed.
+- The status line counts them: `3 commands quieted`.
 
 ## cache-clock
 

@@ -5,7 +5,7 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, quiet flags on noisy commands, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
     "version": "0.13.0"
   },
   "plugins": [
@@ -67,6 +67,12 @@
       "name": "loop-guard",
       "source": "./plugins/loop-guard",
       "description": "Holds back a shell command once when the exact same command already failed twice in a row, and tells Claude to change approach; retrying it still goes through.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "cmd-diet",
+      "source": "./plugins/cmd-diet",
+      "description": "Adds quiet flags to noisy shell commands before they run (git status, pytest, cargo, npm install, mvn, curl, wget, docker pull), so Claude reads short output from the start; errors, failures and warnings stay in full.",
       "version": "0.1.0"
     },
     {
