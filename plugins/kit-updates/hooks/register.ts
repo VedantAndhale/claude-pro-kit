@@ -76,7 +76,11 @@ async function notify($: EngineInterface) {
   if (got === undefined) return
   const lines: string[] = []
   const updates = findUpdates(got.installed, got.catalog)
-  if (updates.length > 0) lines.push(describeUpdates(updates))
+  // On by default: updates to mods you already installed go in by themselves.
+  // New mods are only announced; installing one stays your choice.
+  const isAuto = ((await $.store.get('auto')) as boolean | undefined) ?? true
+  if (updates.length > 0 && isAuto) void install($)
+  else if (updates.length > 0) lines.push(describeUpdates(updates))
 
   const seen = (await $.store.get('seenMods')) as string[] | undefined
   const fresh = findNewMods(got.installed, got.catalog, seen)
@@ -125,14 +129,20 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'kit-update',
-      description: 'Update the installed claude-pro-kit mods to their latest versions',
+      description: 'Update the installed claude-pro-kit mods now · /kit-update auto on|off',
     })
     void notify($)
     return next(e)
   })
 
   // Answered with no text: the outcome is shown, not added to the conversation.
-  on('command.run', { command: 'kit-update' }, async $ => {
+  on('command.run', { command: 'kit-update' }, async ($, e) => {
+    const [a, b] = (e.args ?? '').trim().toLowerCase().split(/\s+/)
+    if (a === 'auto' && (b === 'on' || b === 'off')) {
+      await $.store.set('auto', b === 'on')
+      $.ui.toast(b === 'on' ? `${MARKETPLACE}: updates install by themselves at session start.` : `${MARKETPLACE}: updates are announced; /kit-update installs them.`)
+      return {}
+    }
     $.ui.toast(`${MARKETPLACE}: checking for updates…`)
     await install($)
     return {}

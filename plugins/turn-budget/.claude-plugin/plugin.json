@@ -1,6 +1,9 @@
 {
   "name": "turn-budget",
-  "version": "0.1.2",
-  "description": "Asks before a single turn uses more than +5 session points or 500,000 uncached input tokens, and stops it cleanly if you say so. Checks between requests, never mid-command.",
-  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+  "version": "0.2.0",
+  "description": "When one turn uses more than +5 session points or 500,000 uncached input tokens, writes a handoff from exact session data and continues in a fresh session by itself. No model calls.",
+  "author": {
+    "name": "Vedant Andhale",
+    "url": "https://github.com/VedantAndhale"
+  }
 }

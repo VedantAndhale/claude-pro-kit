@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
+import { continueMessage, handoffDoc } from '../hooks/handoff'
 import { DEFAULTS, choiceOf, firstMarks, isOver, nextMarks, parse, question, stopNote, uncached } from '../hooks/budget'
 
 describe('budget arithmetic', () => {
@@ -67,8 +68,8 @@ describe('budget arithmetic', () => {
 
 // The engine's side: a store, readings, and a model whose every request
 // reports the same usage and is counted.
-const engine = (on: On, answer?: string) => {
-  const store = new Map<string, unknown>()
+const engine = (on: On, answer?: string, mode: 'ask' | 'handoff' = 'ask') => {
+  const store = new Map<string, unknown>([['limits', { onLimit: mode }]])
   const sent = { requests: 0, asked: 0, aborted: [] as string[], notes: [] as string[], toasts: [] as string[] }
   on('store.get', ($, e) => ({ value: store.get(e.key) }))
   on('store.set', ($, e) => {
@@ -118,7 +119,70 @@ const step = async ($: { turn: { step: (e: never) => AsyncIterable<unknown> & Pr
   return stream
 }
 
+describe('the handoff document', () => {
+  test('built from exact session data, latest prompt last, with todos, files and git', () => {
+    const doc = handoffDoc({
+      reason: 'The previous session was handed off by turn-budget: one turn used 6 points.',
+      cwd: 'D:/repo',
+      prompts: ['set up the repo', 'add retries to the mailer'],
+      lastAnswer: 'Retries are in; next the tests.',
+      files: { 'D:/repo/mailer.ts': 3, 'D:/repo/retry.ts': 1 },
+      todos: [
+        { content: 'Add retry loop', status: 'completed' },
+        { content: 'Write tests', status: 'in_progress' },
+      ],
+      gitStatus: ' M mailer.ts\n?? retry.ts\n',
+      gitDiffStat: ' mailer.ts | 12 +++++++---\n',
+      at: '2026-10-08 10:00',
+    })
+    expect(doc).toContain('2 (latest). add retries to the mailer')
+    expect(doc).toContain('- [x] Add retry loop')
+    expect(doc).toContain('- [~] Write tests')
+    expect(doc).toContain('- `D:/repo/mailer.ts` (3 edits)')
+    expect(doc).toContain('?? retry.ts')
+    expect(doc).toContain('> Retries are in; next the tests.')
+    expect(continueMessage(doc, '/h.md').startsWith('Continue the work from my previous session.')).toBe(true)
+  })
+})
+
 describe('turn-budget', () => {
+  test('handoff mode (the default): at the limit, no question; the turn stops, a handoff is written, the chat is cleared and continues', async ($, on) => {
+    const sent = engine(on, 'Continue', 'handoff')
+    const written: string[] = []
+    const ran: string[] = []
+    on('fs.write', ($, e) => {
+      written.push(e.text)
+      return { value: undefined }
+    })
+    on('session.cwd', () => ({ value: 'D:/repo' }))
+    on('session.messages', () => ({ value: [{ role: 'user', text: 'add retries', toolUses: [] }] }) as never)
+    on('process.run', () => ({ value: { exitCode: 0, stdout: ' M mailer.ts\n', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }) as never)
+    on('env.get', () => ({ value: '/home/dev/.claude' }))
+    on('clock.now', () => ({ value: Date.parse('2026-10-08T10:00:00Z') }))
+    on('clock.after', () => ({ value: undefined }))
+    on('command.run', { command: 'clear' }, () => {
+      ran.push('clear')
+      return {}
+    })
+    on('prompt.submit', ($, e) => {
+      ran.push(`submit:${e.text.slice(0, 42)}`)
+      return { text: e.text } as never
+    })
+    await $.session.measure(reading(20))
+    await $.turn.start({ text: 'go', turnId: 't1' })
+    await $.session.measure(reading(26))
+    await step($ as never, 0)
+
+    expect(sent.asked).toBe(0)
+    expect(sent.requests).toBe(0)
+    expect(sent.aborted).toEqual(['t1'])
+    expect(written[0]).toContain('1 (latest). add retries')
+    expect(written[0]).toContain(' M mailer.ts')
+    // The clear and the new prompt run just after the hook, on their own.
+    for (let i = 0; i < 100 && ran.length < 2; i++) await new Promise(r => setTimeout(r, 10))
+    expect(ran).toEqual(['clear', 'submit:Continue the work from my previous session'])
+  })
+
   test('does not ask while under the limit', async ($, on) => {
     const sent = engine(on, 'Stop here')
     await $.session.measure(reading(20))
@@ -203,6 +267,6 @@ describe('turn-budget', () => {
     const ran = await $.command.run({ command: 'turn-budget', args: '8' } as never)
 
     expect(ran.text).toBeUndefined()
-    expect(sent.toasts.at(-1)).toContain('asks at +8 session points')
+    expect(sent.toasts.at(-1)).toContain('at +8 session points')
   })
 })

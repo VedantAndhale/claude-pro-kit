@@ -17,7 +17,7 @@ Thirteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) tha
 | **read-cap** | Stops Claude reading a file over 1,000 lines whole and gives it an outline tool, so it reads only the lines it needs; a retry still reads the whole file | Everywhere |
 | **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
 | **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
-| **turn-budget** | Asks before a single turn uses more than +5 session points, and stops that turn cleanly if you say so | Everywhere |
+| **turn-budget** | When one turn uses more than +5 session points, writes a handoff and continues in a fresh session by itself; `/handoff` any time | Everywhere |
 | **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
 | **answer-pane** | Explain, plan and ELI5 pages drawn natively in a side pane; plans have decision buttons and Respond fills the prompt box | Desktop app (no diagrams in the terminal) |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
@@ -184,18 +184,29 @@ Sending the same message again goes through, so nothing is ever blocked for good
 
 ## turn-budget
 
-budget-guard looks at your session before a turn starts. turn-budget watches one turn while it runs, because a long agentic turn can quietly use a big share of your session between two of your messages. Before each model request in a turn, subagents' included, it checks what the turn has used. Once the turn crosses your limit, it asks before the next request is sent:
+budget-guard looks at your session before a turn starts. turn-budget watches one turn while it runs, because a long agentic turn can quietly use a big share of your session between two of your messages. It checks before each model request in a turn, subagents' included.
+
+**At the limit, it hands off to a fresh session by itself** (the default):
+
+1. The turn stops before the next request. A running command is never cut off.
+2. It writes a handoff from exact session data, with no model call: your last prompts, the todo list, the files Claude edited, `git status --short`, `git diff --stat`, and the last thing Claude said. It's saved under `~/.claude/handoffs/`.
+3. It clears the chat and sends the handoff as the first message of the fresh session, so Claude carries on with a few thousand tokens of context instead of re-sending the whole old conversation on every request.
+4. A toast tells you it happened. The old conversation stays in `/resume`.
+
+`/handoff` does the same at any time.
+
+Limits, whichever comes first: **+5 points** of the 5-hour session, or **500,000 uncached input tokens** for when the session meter lags behind. Cache reads aren't counted. Without a subscription there's no session reading, so only the token limit applies.
+
+Prefer to decide each time? `/turn-budget ask` shows a question at the limit instead:
 
 ```
 This turn has used 6 points of your session (20% → 26%, limit +5) over 14 requests. Keep going?
-  Continue · Don't ask again · Stop here
+  Hand off to a fresh session · Continue · Don't ask again · Stop here
 ```
 
-- **Continue** raises the limit by one more step, so it asks again if the turn keeps going. **Don't ask again** holds for the rest of this turn. **Stop here** ends the turn without sending another request, and leaves Claude one line saying you stopped it, so the next turn asks before picking the work back up.
-- It only checks between requests, so a running command is never cut off.
-- Limits, whichever comes first: **+5 points** of the 5-hour session, or **500,000 uncached input tokens** for when the session meter lags behind. Cache reads aren't counted, since they cost a fraction of new input. Without a subscription there's no session reading, so only the token limit applies.
-- Anything but a clear Continue counts as Stop. A question nobody can answer (a `-p` run, or a dismissed dialog) never stops a turn; the status line notes it instead.
-- `/turn-budget` shows the limits, `/turn-budget 8` sets the points, `/turn-budget tokens 1000000` sets the token limit, and `/turn-budget off|on` switches it. Answers are toasts. While a turn runs, the status line reads `turn budget 3/5 pts`.
+**Stop here** ends the turn and leaves Claude one line saying you stopped it. Anything but a clear Continue counts as Stop. A question nobody can answer (a `-p` run) never stops a turn.
+
+`/turn-budget` shows the settings, `/turn-budget 8` sets the points, `/turn-budget tokens 1000000` the token limit, `/turn-budget handoff|ask` what happens at the limit, and `/turn-budget off|on` switches it. Answers are toasts. While a turn runs, the status line reads `turn budget 3/5 pts`.
 
 ## collision-guard
 
@@ -248,7 +259,7 @@ At the start of each session it downloads this repo's `marketplace.json` (about 
 claude-pro-kit: 2 updates available (pro-hud 0.2.1 → 0.2.2, tool-diet 0.1.2 → 0.1.3). Run /kit-update.
 ```
 
-`/kit-update` runs `claude plugin marketplace update claude-pro-kit` and then `claude plugin update` for each outdated mod. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. When a new mod joins the kit, it says so once, with the install command; mods already in the kit when you installed kit-updates are not announced.
+Updates to the mods you have installed **install by themselves** at session start (`/kit-update auto off` to only announce them). `/kit-update` runs the same thing now: `claude plugin marketplace update claude-pro-kit`, then `claude plugin update` for each outdated mod. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. When a new mod joins the kit, it says so once, with the install command; mods already in the kit when you installed kit-updates are not announced.
 
 ## Benchmark
 

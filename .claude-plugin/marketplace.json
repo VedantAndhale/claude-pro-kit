@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.6.0"
+    "version": "0.7.0"
   },
   "plugins": [
     {
@@ -24,8 +24,8 @@
     {
       "name": "turn-budget",
       "source": "./plugins/turn-budget",
-      "description": "Asks before one turn uses more than +5 session points or 500,000 uncached input tokens, and stops it cleanly if you say so.",
-      "version": "0.1.2"
+      "description": "When one turn crosses +5 session points, writes a handoff and continues in a fresh session by itself; /handoff any time.",
+      "version": "0.2.0"
     },
     {
       "name": "tool-diet",
@@ -72,8 +72,8 @@
     {
       "name": "kit-updates",
       "source": "./plugins/kit-updates",
-      "description": "Tells you when an installed claude-pro-kit mod has a newer version or a new mod joins the kit; /kit-update installs updates.",
-      "version": "0.2.0"
+      "description": "Installs updates to your claude-pro-kit mods by itself at session start, and announces new mods.",
+      "version": "0.3.0"
     },
     {
       "name": "collision-guard",

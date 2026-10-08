@@ -6,9 +6,11 @@ export type Limits = {
   /** Uncached input tokens (uncached + cache-written) one turn may send before it asks. */
   tokens: number
   isOff: boolean
+  /** At the limit: hand off to a fresh session by itself (default), or ask first. */
+  onLimit: 'handoff' | 'ask'
 }
 
-export const DEFAULTS: Limits = { points: 5, tokens: 500_000, isOff: false }
+export const DEFAULTS: Limits = { points: 5, tokens: 500_000, isOff: false, onLimit: 'handoff' }
 
 export type Spend = {
   /** Session points this turn has used, from Claude Code's readings; undefined off a subscription. */
@@ -56,15 +58,16 @@ export const question = (spend: Spend, marks: Marks, start: number | undefined, 
   return `This turn has used ${used} over ${spend.requests} ${spend.requests === 1 ? 'request' : 'requests'}. Keep going?`
 }
 
+export const HANDOFF = 'Hand off to a fresh session'
 export const CONTINUE = 'Continue'
 export const CONTINUE_QUIETLY = "Don't ask again"
 export const STOP = 'Stop here'
 
-export type Choice = 'continue' | 'quiet' | 'stop'
+export type Choice = 'handoff' | 'continue' | 'quiet' | 'stop'
 
 /** Anything but a Continue label stops: an answer that is not a clear yes protects the session. */
 export const choiceOf = (answer: string): Choice =>
-  answer === CONTINUE ? 'continue' : answer === CONTINUE_QUIETLY ? 'quiet' : 'stop'
+  answer === HANDOFF ? 'handoff' : answer === CONTINUE ? 'continue' : answer === CONTINUE_QUIETLY ? 'quiet' : 'stop'
 
 export const stopNote = (spend: Spend, marks: Marks) =>
   `[turn-budget] The user stopped the previous turn at ${crossed(spend, marks) === 'points' ? `+${spend.points} session points` : `${n(spend.tokens)} uncached input tokens`}. Ask before continuing that work.`
@@ -76,6 +79,7 @@ export const status = (spend: Spend, marks: Marks) =>
 export const parse = (args: string, limits: Limits): Limits | undefined => {
   const [a, b] = args.trim().toLowerCase().split(/\s+/)
   if (a === 'off' || a === 'on') return { ...limits, isOff: a === 'off' }
+  if (a === 'handoff' || a === 'ask') return { ...limits, onLimit: a }
   if (a === 'tokens' && b && /^\d+$/.test(b) && Number(b) > 0) return { ...limits, tokens: Number(b) }
   if (a && /^\d+(\.\d+)?$/.test(a) && Number(a) > 0) return { ...limits, points: Number(a) }
   return undefined
@@ -84,4 +88,4 @@ export const parse = (args: string, limits: Limits): Limits | undefined => {
 export const describeLimits = (limits: Limits) =>
   limits.isOff
     ? 'Turn budget is off. /turn-budget on to turn it back on.'
-    : `Turn budget: asks at +${limits.points} session points or ${n(limits.tokens)} uncached input tokens per turn. /turn-budget <points> · /turn-budget tokens <n> · /turn-budget off`
+    : `Turn budget: at +${limits.points} session points or ${n(limits.tokens)} uncached input tokens in one turn, it ${limits.onLimit === 'handoff' ? 'hands off to a fresh session by itself' : 'asks first'}. /turn-budget <points> · tokens <n> · handoff|ask · off`
