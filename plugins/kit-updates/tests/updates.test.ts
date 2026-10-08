@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { compareVersions, describeNewMods, describeUpdates, findNewMods, findUpdates, pluginsDirOf } from '../hooks/register'
+import { compareVersions, describeNewMods, describeUpdates, findMissingMods, findNewMods, findUpdates, pluginsDirOf } from '../hooks/register'
 
 const installed = {
   plugins: {
@@ -69,5 +69,10 @@ describe('kit-updates', () => {
     expect(describeNewMods(['cache-clock'])).toBe(
       'claude-pro-kit: new mod cache-clock. Install with /plugin install cache-clock@claude-pro-kit.',
     )
+  })
+
+  test("/kit-update installs kit mods never had, not ones uninstalled before", async () => {
+    expect(findMissingMods(installed, catalog, ["pro-hud", "tool-diet", "reread-guard"])).toEqual(["context-xray"])
+    expect(findMissingMods(installed, catalog, ["context-xray"])).toEqual([])
   })
 })
