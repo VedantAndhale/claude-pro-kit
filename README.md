@@ -193,6 +193,8 @@ budget-guard looks at your session before a turn starts. turn-budget watches one
 3. It clears the chat and sends the handoff as the first message of the fresh session, so Claude carries on with a few thousand tokens of context instead of re-sending the whole old conversation on every request.
 4. A toast tells you it happened. The old conversation stays in `/resume`.
 
+The handoff never touches your repository: it is saved outside it, under `~/.claude/handoffs/`, and git is only read (`git status --short`, `git diff --stat`), never written to. Nothing is staged, committed or added to your project.
+
 `/handoff` does the same at any time.
 
 Limits, whichever comes first: **+5 points** of the 5-hour session, or **500,000 uncached input tokens** for when the session meter lags behind. Cache reads aren't counted. Without a subscription there's no session reading, so only the token limit applies.
