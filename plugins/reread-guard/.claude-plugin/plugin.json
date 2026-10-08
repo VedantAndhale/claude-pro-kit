@@ -1,6 +1,6 @@
 {
   "name": "reread-guard",
-  "version": "0.1.0",
-  "description": "Stops Claude re-reading a file it already read in this conversation when the file has not changed since; a deliberate second attempt still goes through.",
+  "version": "0.2.0",
+  "description": "Stops Claude re-reading a file it already read in this conversation, with Read or a plain cat, sed -n, head, tail or Get-Content, when the file has not changed since; a deliberate second attempt still goes through.",
   "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
 }

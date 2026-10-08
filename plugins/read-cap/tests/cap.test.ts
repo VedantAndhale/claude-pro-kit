@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 import type { On } from 'claude-code'
 
-import { describeOutline, lineCount, outline } from '../hooks/register'
+import { describeOutline, lineCount, outline, wholeRead } from '../hooks/register'
 
 const FILE = 'C:/repo/src/big.ts'
 
@@ -11,15 +11,21 @@ const engine = (on: On, text: string) => {
   const runs = { count: 0 }
   on('fs.stat', () => ({ value: { kind: 'file' as const, size: text.length, mtimeMs: 1, isLink: false } }))
   on('fs.read', () => ({ value: text }))
+  on('session.cwd', () => ({ value: 'C:/repo' }))
   on('ui.status', () => ({ value: undefined }))
   on('tool.call', { tool: 'Read' }, () => {
     runs.count += 1
     return { result: { type: 'text', file: {} } as never }
   })
+  on('tool.call', { tool: 'Bash' }, () => {
+    runs.count += 1
+    return { result: { stdout: '', stderr: '' } as never }
+  })
   return runs
 }
 
 const read = (extra: Record<string, unknown> = {}) => ({ tool: 'Read' as const, file_path: FILE, ...extra })
+const bash = (command: string) => ({ tool: 'Bash', command }) as never
 
 const SOURCE = [
   '# Notes',
@@ -94,6 +100,33 @@ describe('read-cap', () => {
   test('lets an image through without reading it', async ($, on) => {
     const runs = engine(on, lines(3412))
     const done = await $.tool.call(read({ file_path: 'C:/repo/shot.png' }))
+
+    expect(done.deny).toBeUndefined()
+    expect(runs.count).toBe(1)
+  })
+
+  test('knows a whole-file shell print from a ranged one', async () => {
+    expect(wholeRead('cat src/big.ts', 'Bash')).toBe('src/big.ts')
+    expect(wholeRead("Get-Content -LiteralPath 'C:\\repo\\big.ts' -Raw", 'PowerShell')).toBe('C:\\repo\\big.ts')
+    expect(wholeRead("sed -n '1,80p' src/big.ts", 'Bash')).toBeUndefined()
+    expect(wholeRead('Get-Content big.ts -Tail 20', 'PowerShell')).toBeUndefined()
+    expect(wholeRead('cat big.ts > copy.ts', 'Bash')).toBeUndefined()
+  })
+
+  test('holds a cat of a 1,500-line file once, then lets the retry through', async ($, on) => {
+    const runs = engine(on, lines(1500))
+    const first = await $.tool.call(bash('cat src/big.ts'))
+    const second = await $.tool.call(bash('cat src/big.ts'))
+
+    expect(first.deny).toContain('big.ts has 1,500 lines')
+    expect(first.deny).toContain('Retry the same command')
+    expect(second.deny).toBeUndefined()
+    expect(runs.count).toBe(1)
+  })
+
+  test('lets a ranged sed of a long file through', async ($, on) => {
+    const runs = engine(on, lines(1500))
+    const done = await $.tool.call(bash("sed -n '200,280p' src/big.ts"))
 
     expect(done.deny).toBeUndefined()
     expect(runs.count).toBe(1)
