@@ -1,6 +1,17 @@
 // The trimming itself: pure, so the tests exercise it directly.
 
-export const TOOLS = new Set(['Bash', 'PowerShell', 'BashOutput'])
+export const TOOLS = new Set(['Bash', 'PowerShell', 'BashOutput', 'Grep', 'Agent', 'Task'])
+
+// Shell output keeps its head, tail and error lines; search results keep their
+// first matches; a subagent's report keeps its opening and its conclusion.
+export type Kind = 'shell' | 'search' | 'report'
+
+export const kindOf = (tool: string): Kind =>
+  tool === 'Grep' ? 'search' : tool === 'Agent' || tool === 'Task' ? 'report' : 'shell'
+
+const SEARCH_HEAD = 100
+const REPORT_HEAD = 6_000
+const REPORT_TAIL = 2_000
 
 // Claude Code itself cuts the middle out of a long shell result before any
 // mod sees it; this trims what is left to its head, tail and error lines.
@@ -26,9 +37,22 @@ export const textOf = (content: unknown): string | undefined => {
 
 const clip = (line: string) => (line.length > MAX_LINE_CHARS ? `${line.slice(0, MAX_LINE_CHARS)} [… line cut]` : line)
 
-export const diet = (text: string, savedAt: string): string | undefined => {
+export const diet = (text: string, savedAt: string, kind: Kind = 'shell'): string | undefined => {
   const lines = text.split('\n')
   if (lines.length <= MAX_LINES && text.length <= MAX_CHARS) return undefined
+
+  // Short on purpose: the model reads these notes.
+  if (kind === 'search') {
+    const body = lines.slice(0, SEARCH_HEAD).map(clip).join('\n')
+    return `[output-diet: first ${SEARCH_HEAD}/${lines.length} lines shown; narrow the search, or read all in ${savedAt}]\n\n${body}`
+  }
+  if (kind === 'report') {
+    if (text.length <= MAX_CHARS) return undefined
+    const cut = text.length - REPORT_HEAD - REPORT_TAIL
+    const shown = (REPORT_HEAD + REPORT_TAIL).toLocaleString('en-US')
+    return `[output-diet: ${shown}/${text.length.toLocaleString('en-US')} chars of the report shown; all in ${savedAt}]\n\n` +
+      `${text.slice(0, REPORT_HEAD)}\n… [${cut.toLocaleString('en-US')} chars omitted]\n${text.slice(-REPORT_TAIL)}`
+  }
 
   const head = lines.slice(0, HEAD)
   const tailStart = Math.max(HEAD, lines.length - TAIL)

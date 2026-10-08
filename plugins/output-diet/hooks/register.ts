@@ -1,11 +1,12 @@
 import type { EngineInterface, Register } from 'claude-code'
 
-import { TOOLS, diet, textOf } from './diet'
+import { TOOLS, diet, kindOf, textOf } from './diet'
 import type { Block } from './diet'
 
-// Rewrites what the model reads from a long shell result, never what the
-// person sees: the transcript row keeps its full output on screen, and the
-// whole text is saved to a file the model can Read when the trimmed part matters.
+// Rewrites what the model reads from a long shell, search or subagent result,
+// never what the person sees: the transcript row keeps its full output on
+// screen, and the whole text is saved to a file the model can Read when the
+// trimmed part matters.
 
 const join = (...parts: string[]) => {
   const sep = parts[0]?.includes('\\') ? '\\' : '/'
@@ -61,7 +62,7 @@ export const register: Register = on => {
         continue
       }
       const path = join(dir, `output-diet-${String(block.tool_use_id ?? e.uuid)}.txt`)
-      const slim = diet(text, path)
+      const slim = diet(text, path, kindOf(e.origin.tool))
       if (slim === undefined) {
         content.push(block)
         continue

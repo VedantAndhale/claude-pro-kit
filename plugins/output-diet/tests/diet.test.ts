@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { TOOLS, diet, textOf } from '../hooks/diet'
+import { TOOLS, diet, kindOf, textOf } from '../hooks/diet'
 
 const lines = (n: number, special: Record<number, string> = {}) =>
   Array.from({ length: n }, (_, i) => special[i + 1] ?? `line ${i + 1}`).join('\n')
@@ -57,9 +57,34 @@ describe('diet', () => {
     expect(textOf([{ type: 'image', source: {} }])).toBeUndefined()
   })
 
-  test('applies to shell tools only', () => {
+  test('applies to shell, search and subagent results only', () => {
     expect(TOOLS.has('Bash')).toBe(true)
     expect(TOOLS.has('PowerShell')).toBe(true)
+    expect(TOOLS.has('Grep')).toBe(true)
+    expect(TOOLS.has('Agent')).toBe(true)
     expect(TOOLS.has('Read')).toBe(false)
+    expect(TOOLS.has('Glob')).toBe(false)
+  })
+
+  test('keeps the first 100 lines of a long search result', () => {
+    const text = Array.from({ length: 250 }, (_, i) => `src/f${i}.ts:1:match`).join('\n')
+    const slim = diet(text, 'X', kindOf('Grep')) as string
+    expect(slim.startsWith('[output-diet: first 100/250 lines shown; narrow the search, or read all in X]')).toBe(true)
+    expect(slim).toContain('src/f99.ts')
+    expect(slim).not.toContain('src/f100.ts')
+  })
+
+  test('keeps the opening and the conclusion of a long subagent report', () => {
+    const text = `START${'a'.repeat(20_000)}END`
+    const slim = diet(text, 'X', kindOf('Agent')) as string
+    expect(slim).toContain('8,000/20,008 chars of the report shown; all in X')
+    expect(slim).toContain('START')
+    expect(slim).toContain('END')
+    expect(slim).toContain('[12,008 chars omitted]')
+  })
+
+  test('leaves a report of many short lines under 8,000 chars alone', () => {
+    const text = Array.from({ length: 200 }, () => 'ok').join('\n')
+    expect(diet(text, 'X', kindOf('Agent'))).toBeUndefined()
   })
 })

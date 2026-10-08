@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, capped and repeat file reads, edits in place of full-file rewrites, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.11.0"
+    "version": "0.12.0"
   },
   "plugins": [
     {
@@ -18,8 +18,8 @@
     {
       "name": "output-diet",
       "source": "./plugins/output-diet",
-      "description": "Trims long shell output before Claude reads it (head, tail and error lines kept); the untrimmed text is saved to a file Claude can open.",
-      "version": "0.1.0"
+      "description": "Trims long shell output, Grep results and subagent reports before Claude reads them (head, tail and error lines kept); the untrimmed text is saved to a file Claude can open.",
+      "version": "0.2.0"
     },
     {
       "name": "turn-budget",
@@ -90,8 +90,8 @@
     {
       "name": "kit-updates",
       "source": "./plugins/kit-updates",
-      "description": "Installs updates to your claude-pro-kit mods by itself at session start, and announces new mods.",
-      "version": "0.3.0"
+      "description": "Installs updates to your claude-pro-kit mods by itself at session start, and announces new mods (or installs them too, with /kit-update auto-new on).",
+      "version": "0.4.0"
     },
     {
       "name": "collision-guard",

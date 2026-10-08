@@ -13,7 +13,7 @@ Sixteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that
 | **agent-diet** | Runs Explore subagents on Haiku instead of your main model | Everywhere |
 | **context-xray** | `/xray` opens the exact breakdown of what fills your context window | Everywhere |
 | **pro-hud** | Live meters above the prompt for your 5-hour session, your week and the context window, plus a per-turn receipt of tokens in, cached and out | Claude desktop app |
-| **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
+| **output-diet** | Trims long shell output, search results and subagent reports before Claude reads them, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
 | **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
 | **write-guard** | Steers Claude to `Edit` instead of rewriting an existing file in full with `Write`; a deliberate rewrite still goes through | Everywhere |
 | **cache-clock** | Counts down until the prompt cache expires; once it has, shows exactly how many tokens your next message will re-send uncached | Everywhere |
@@ -169,6 +169,8 @@ When a `Bash` or `PowerShell` result runs past 120 lines or 8,000 characters, Cl
 - The status line keeps a running count: `3 trimmed · 41,200 chars saved`.
 - The untrimmed text is written to disk first; if the write fails, nothing is trimmed.
 - It goes in the session's own `tool-results` folder, beside the transcript, where Claude Code keeps the outputs it saves itself, so Claude can open it without a permission prompt. When that folder cannot be found, it goes under `~/.claude/output-diet/` (or `CLAUDE_CONFIG_DIR`).
+- A `Grep` result past the same limits keeps its first 100 lines, with a note to narrow the search: `[output-diet: first 100/252 lines shown; narrow the search, or read all in …]`. In the author's 1,048 past Grep results, 26 went past the limits, and keeping the first 100 lines would have cut 104,052 characters. `Glob` is left alone: none of 128 went past.
+- A subagent's report past 8,000 characters keeps its first 6,000 and last 2,000 characters, so the opening and the conclusion stay. In the author's 123 past reports, 17 went past it, 313,365 characters between them.
 - Claude Code itself already cuts the middle out of very long shell output (past roughly 10,000 characters) before any mod sees it, and for a failing command no uncut copy is kept. output-diet works on what is left: the saved file holds everything Claude would have read, and an error line Claude Code cut is not in it.
 
 ## reread-guard
@@ -326,7 +328,7 @@ At the start of each session it downloads this repo's `marketplace.json` (about 
 claude-pro-kit: 2 updates available (pro-hud 0.2.1 → 0.2.2, tool-diet 0.1.2 → 0.1.3). Run /kit-update.
 ```
 
-Updates to the mods you have installed **install by themselves** at session start (`/kit-update auto off` to only announce them). `/kit-update` runs the same thing now: `claude plugin marketplace update claude-pro-kit`, then `claude plugin update` for each outdated mod. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. When a new mod joins the kit, it says so once, with the install command; mods already in the kit when you installed kit-updates are not announced.
+Updates to the mods you have installed **install by themselves** at session start (`/kit-update auto off` to only announce them). `/kit-update` runs the same thing now: `claude plugin marketplace update claude-pro-kit`, then `claude plugin update` for each outdated mod. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. When a new mod joins the kit, it says so once, with the install command; mods already in the kit when you installed kit-updates are not announced. To have new mods install themselves instead, run `/kit-update auto-new on` (off by default); a mod you uninstalled is never put back.
 
 ## Benchmark
 
