@@ -5,8 +5,8 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, shorter shell output, capped and repeat file reads, edits in place of full-file rewrites, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.10.0"
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, capped and repeat file reads, edits in place of full-file rewrites, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
+    "version": "0.11.0"
   },
   "plugins": [
     {
@@ -37,6 +37,12 @@
       "name": "skill-diet",
       "source": "./plugins/skill-diet",
       "description": "Lists skills you have not used lately in this project by name only, without their descriptions; the Skill tool and /name still load any of them.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "agent-diet",
+      "source": "./plugins/agent-diet",
+      "description": "Runs search-only subagents (Explore by default) on Haiku instead of your main model; a model Claude asks for still wins, and /agent-diet picks the types and the model.",
       "version": "0.1.0"
     },
     {

@@ -1,0 +1,6 @@
+{
+  "name": "agent-diet",
+  "version": "0.1.0",
+  "description": "Runs search-only subagents (Explore by default) on Haiku instead of your main model; a model Claude asks for still wins, and /agent-diet picks the types and the model.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}

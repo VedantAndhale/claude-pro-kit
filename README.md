@@ -4,12 +4,13 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Fifteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Sixteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
 | **tool-diet** | Loads tools you have not used lately on demand instead of with every request | Everywhere |
 | **skill-diet** | Lists skills you have not used lately in this project by name only, without their descriptions | Everywhere |
+| **agent-diet** | Runs Explore subagents on Haiku instead of your main model | Everywhere |
 | **context-xray** | `/xray` opens the exact breakdown of what fills your context window | Everywhere |
 | **pro-hud** | Live meters above the prompt for your 5-hour session, your week and the context window, plus a per-turn receipt of tokens in, cached and out | Claude desktop app |
 | **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
@@ -28,6 +29,7 @@ Fifteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that
 
 - With **tool-diet**, every request in a fresh session was **15,954 tokens smaller (−36%)**: 43,859 → 27,905, as the API reported. [Details](#tool-diet).
 - With **skill-diet** on top of the other mods, every request in a fresh session was **8,226 tokens smaller (−30%)**: 27,423 → 19,197, as the API reported. [Details](#skill-diet).
+- With **agent-diet**, a task that sends one Explore subagent cost **33% less** on a Sonnet session: $0.05570 → $0.03741, averaged over three runs each. [Details](#agent-diet).
 - In the [benchmark](#benchmark), a debugging task cost **33% less** with output-diet and reread-guard on, averaged over three runs each.
 
 ## Install
@@ -38,6 +40,7 @@ In Claude Code:
 /plugin marketplace add VedantAndhale/claude-pro-kit
 /plugin install tool-diet@claude-pro-kit
 /plugin install skill-diet@claude-pro-kit
+/plugin install agent-diet@claude-pro-kit
 /plugin install context-xray@claude-pro-kit
 /plugin install pro-hud@claude-pro-kit
 /plugin install output-diet@claude-pro-kit
@@ -98,6 +101,23 @@ In the same setup, asked to fill in a PDF form, Claude found `anthropic-skills:p
 - The listing is decided once per session, so the prompt cache is never disturbed mid-session. Changes apply from the next session.
 - `/skill-diet` shows what is listed by name only this session and how many characters left the listing; `/skill-diet keep <skill>` always lists one in full, `unkeep` undoes it, and `/skill-diet off|on` switches it. Answers are toasts, so they add nothing to the conversation. The status line keeps the count, in the form `<n> skills by name only, <n> characters off`.
 - `/xray` shows the skills line before and after, in tokens.
+
+## agent-diet
+
+A subagent runs on your main model unless its definition or Claude's Agent call names another. Explore only searches and reads, yet in the author's own 85 subagent transcripts, every one of the 2,043 Explore requests ran on Opus or Sonnet, reading 147,298,992 input tokens. agent-diet starts the agent types you list (Explore by default) on Haiku.
+
+- A model Claude names in the Agent call is kept, and a fork always runs on its parent's model.
+- Other agent types (general-purpose, Plan, your own) keep their usual model.
+- `/agent-diet` shows the setting and how many subagents it moved this session; `/agent-diet model haiku|sonnet|opus` picks the model, `/agent-diet add|remove <agent type>` changes the list, and `/agent-diet off|on` switches it. Answers are toasts, so they add nothing to the conversation. The status line keeps the count, in the form `2 subagents on haiku`.
+
+Measured with `claude -p --model sonnet --output-format json` on a task that sends one Explore subagent to find a file, three runs each in alternating order. Every run found the file. Figures are the cost and tokens Claude Code reported per model:
+
+| Run | Without: cost | Without: Sonnet tokens in | With: cost | With: Sonnet tokens in | With: Haiku tokens in |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | $0.05692 | 68,395 | $0.03724 | 40,213 | 27,848 |
+| 2 | $0.05577 | 68,111 | $0.03764 | 39,593 | 27,872 |
+| 3 | $0.05441 | 68,123 | $0.03736 | 40,184 | 42,770 |
+| Average | $0.05570 | | $0.03741 | | |
 
 ## context-xray
 
