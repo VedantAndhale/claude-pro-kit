@@ -44,8 +44,11 @@ export const handoffDoc = (h: HandoffInput) => {
     '',
     `${h.reason} Written ${h.at} in \`${h.cwd}\`, without a model call: everything below is taken from the session as it was.`,
     '',
-    '## What the user asked (latest last)',
-    ...h.prompts.slice(-PROMPTS).map((p, i, all) => `${i + 1}${i === all.length - 1 ? ' (latest)' : ''}. ${clip(p, PROMPT_CHARS).replace(/\n+/g, ' ')}`),
+    '## What the user asked (latest last, in full; earlier ones shortened)',
+    // The latest prompt is what to continue: never cut, its newlines kept.
+    ...h.prompts
+      .slice(-PROMPTS)
+      .map((p, i, all) => (i === all.length - 1 ? `${i + 1} (latest). ${p.trim()}` : `${i + 1}. ${clip(p, PROMPT_CHARS).replace(/\n+/g, ' ')}`)),
   ]
   if (h.todos.length) out.push('', '## Todo list when it stopped', ...h.todos.map(t => `- ${MARK[t.status] ?? '[ ]'} ${t.content}`))
   const files = Object.entries(h.files).sort((a, b) => b[1] - a[1])
@@ -61,7 +64,10 @@ export const handoffDoc = (h: HandoffInput) => {
     'Continue the latest request. Read the files above as you need them rather than all at once, check the todo list, and ask the user if anything here is unclear.',
   )
   const doc = out.join('\n')
-  return doc.length > MAX_CHARS ? `${doc.slice(0, MAX_CHARS - 40)}\n\n… (handoff cut at ${MAX_CHARS} characters)` : doc
+  // The cap leaves the latest prompt out of the count: it comes before the
+  // rest, so the cut never reaches it.
+  const max = MAX_CHARS + (h.prompts.at(-1)?.trim().length ?? 0)
+  return doc.length > max ? `${doc.slice(0, max - 40)}\n\n… (handoff cut at ${max.toLocaleString('en-US')} characters)` : doc
 }
 
 /** The one message that starts the fresh session: the handoff itself, so nothing needs reading first. */

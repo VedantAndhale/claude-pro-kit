@@ -143,6 +143,21 @@ describe('the handoff document', () => {
     expect(doc).toContain('> Retries are in; next the tests.')
     expect(continueMessage(doc, '/h.md').startsWith('Continue the work from my previous session.')).toBe(true)
   })
+
+  test('the latest prompt is kept in full; only earlier ones are shortened', () => {
+    // The live case: a long last message was cut mid-sentence with "…".
+    const latest = `${'Finish the mailer retries, then '.repeat(40)}\nrun the whole suite before you stop.`
+    const doc = handoffDoc({ reason: 'Handed off.', cwd: 'D:/repo', prompts: ['o'.repeat(2_000), latest], files: {}, todos: [], at: '2026-10-08 10:00' })
+    expect(doc).toContain(`2 (latest). ${latest}`)
+    expect(doc).toContain(`1. ${'o'.repeat(799)}…`)
+    expect(doc).not.toContain('o'.repeat(800))
+  })
+
+  test('a latest prompt longer than the 12,000-character cap still survives whole', () => {
+    const latest = 'z'.repeat(15_000)
+    const doc = handoffDoc({ reason: 'Handed off.', cwd: 'D:/repo', prompts: [latest], lastAnswer: 'done', files: {}, todos: [], at: '2026-10-08 10:00' })
+    expect(doc).toContain(`1 (latest). ${latest}`)
+  })
 })
 
 describe('turn-budget', () => {
