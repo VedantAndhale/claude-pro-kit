@@ -5,8 +5,8 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.8.0"
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
+    "version": "0.9.0"
   },
   "plugins": [
     {
@@ -32,6 +32,12 @@
       "source": "./plugins/tool-diet",
       "description": "Loads tools you have not used lately on demand through ToolSearch instead of with every request; core tools and recently used ones stay loaded.",
       "version": "0.1.3"
+    },
+    {
+      "name": "skill-diet",
+      "source": "./plugins/skill-diet",
+      "description": "Lists skills you have not used lately in this project by name only, without their descriptions; the Skill tool and /name still load any of them.",
+      "version": "0.1.0"
     },
     {
       "name": "context-xray",

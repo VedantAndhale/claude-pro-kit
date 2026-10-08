@@ -1,0 +1,6 @@
+{
+  "name": "skill-diet",
+  "version": "0.1.0",
+  "description": "Lists skills you have not used lately in this project by name only, so their descriptions stop riding along on every request; the Skill tool and /name still load any of them. No model calls.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}

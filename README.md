@@ -4,11 +4,12 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Thirteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Fourteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
 | **tool-diet** | Loads tools you have not used lately on demand instead of with every request | Everywhere |
+| **skill-diet** | Lists skills you have not used lately in this project by name only, without their descriptions | Everywhere |
 | **context-xray** | `/xray` opens the exact breakdown of what fills your context window | Everywhere |
 | **pro-hud** | Live meters above the prompt for your 5-hour session, your week and the context window, plus a per-turn receipt of tokens in, cached and out | Claude desktop app |
 | **output-diet** | Trims long shell output before Claude reads it, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
@@ -34,6 +35,7 @@ In Claude Code:
 ```
 /plugin marketplace add VedantAndhale/claude-pro-kit
 /plugin install tool-diet@claude-pro-kit
+/plugin install skill-diet@claude-pro-kit
 /plugin install context-xray@claude-pro-kit
 /plugin install pro-hud@claude-pro-kit
 /plugin install output-diet@claude-pro-kit
@@ -72,6 +74,17 @@ On that setup, the largest tool moved was `Artifact`, whose description alone is
 - `/tool-diet` lists what is on demand this session, grouped by where each tool comes from; `/tool-diet keep <tool>` always loads one, `unkeep` undoes it, and `/tool-diet off|on` switches it. Answers are toasts, so they add nothing to the conversation. The status line keeps the count: `38 tools on demand`.
 
 ![The /tool-diet toast: 38 tools on demand, grouped by source](docs/tool-diet-toast.png)
+
+## skill-diet
+
+Every request carries the skill listing: each installed skill's name and its whole description. With a few plugins installed that is dozens of skills, most of which a given project never uses (video skills in a backend repo, document skills in a game). skill-diet keeps the skills you used lately in this project listed in full and lists the rest on one line by name only. The Skill tool still loads any of them, and typing `/name` still works.
+
+- A skill used in this project in one of your last five sessions stays listed in full. Every use counts: typed as `/name`, called by Claude, or preloaded into a subagent.
+- Usage is kept per project folder, so a skill you use in one repo does not crowd the listing in another.
+- A skill installed after skill-diet stays listed in full for five sessions, so Claude can find it before you have used it.
+- The listing is decided once per session, so the prompt cache is never disturbed mid-session. Changes apply from the next session.
+- `/skill-diet` shows what is listed by name only this session and how many characters left the listing; `/skill-diet keep <skill>` always lists one in full, `unkeep` undoes it, and `/skill-diet off|on` switches it. Answers are toasts, so they add nothing to the conversation. The status line keeps the count, in the form `<n> skills by name only, <n> characters off`.
+- `/xray` shows the skills line before and after, in tokens.
 
 ## context-xray
 
