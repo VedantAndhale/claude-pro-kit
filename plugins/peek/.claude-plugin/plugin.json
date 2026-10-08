@@ -1,0 +1,10 @@
+{
+  "name": "peek",
+  "version": "0.1.0",
+  "description": "Typing \"status\" while background shells or subagents run opens a pane with each task's exact elapsed time, the tail of its output and any percent it printed, instead of sending the prompt to Claude. /peek opens it too. No tokens spent.",
+  "author": {
+    "name": "Vedant Andhale",
+    "url": "https://github.com/VedantAndhale"
+  },
+  "types": "./types/index.d.ts"
+}
