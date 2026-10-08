@@ -92,18 +92,49 @@ async function measure($: EngineInterface) {
   }
 }
 
+/** Context fills at which the pane opens by itself, once per crossing. */
+export const MARKS = [60, 80]
+
+/** The marks crossed between two readings, highest first. */
+export const crossedMarks = (before: number | undefined, now: number) =>
+  MARKS.filter(m => (before ?? 0) < m && now >= m).reverse()
+
+let lastPct: number | undefined
+
 export const register: Register = on => {
+  // Opens itself when the context crosses 60% and 80%: that is when trimming it pays.
+  on('session.measure', async ($, e, next) => {
+    const pct = e.context.percent
+    if (pct !== undefined) {
+      const hit = crossedMarks(lastPct, pct)[0]
+      lastPct = pct
+      const isAuto = ((await $.store.get('auto')) as boolean | undefined) ?? true
+      if (hit !== undefined && isAuto) {
+        await $.ui.open({ id: PANE, title: `Context X-ray · ${pct}% full` })
+        void measure($)
+        $.ui.toast(`Context is ${pct}% full. The X-ray pane shows what fills it; /compact or a handoff (/handoff) shrinks it.`)
+      }
+    }
+    return next(e)
+  })
+
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'xray',
-      description: 'Context X-ray: the exact breakdown of what fills the context window',
+      description: 'Context X-ray: the exact breakdown of what fills the context window · /xray auto on|off',
     })
 
     return next(e)
   })
 
   // Answered with no text: opening the pane adds nothing to the conversation.
-  on('command.run', { command: 'xray' }, async $ => {
+  on('command.run', { command: 'xray' }, async ($, e) => {
+    const arg = e.args.trim().toLowerCase()
+    if (arg === 'auto on' || arg === 'auto off') {
+      await $.store.set('auto', arg === 'auto on')
+      $.ui.toast(arg === 'auto on' ? 'Context X-ray opens by itself at 60% and 80% context.' : 'Context X-ray opens only with /xray.')
+      return {}
+    }
     await $.ui.open({ id: PANE, title: 'Context X-ray' })
     void measure($)
     return {}

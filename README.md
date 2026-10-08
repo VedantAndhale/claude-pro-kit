@@ -79,6 +79,8 @@ On that setup, the largest tool moved was `Artifact`, whose description alone is
 
 `/xray` opens a pane with the exact breakdown `/context` computes: what is sent with every request (system prompt, tools, MCP tools, memory files, skills, messages), what is loaded on demand, which MCP tools load every time, and each memory file's size. It measures when the pane opens and when you press Refresh (or `r`), never in the background, because the exact count sends one token-count request per tool and memory file.
 
+**Opens by itself** when the context crosses 60% and again at 80%, with a toast pointing at `/compact` and `/handoff`. `/xray auto off` keeps it to `/xray` only.
+
 ## pro-hud
 
 The recording at the top of this page is the band. In text:
@@ -99,6 +101,8 @@ On a wide window the three meters sit side by side on one row; on a narrow one e
 - A toast when the session crosses 80% and 90%.
 
 `/hud` shows what is on; `/hud all on|off`, or `/hud band|spinner|cards on|off`. The answer is a toast, so toggling adds nothing to the conversation. It draws in the desktop app only and leaves the terminal as it is.
+
+**Weekly toasts** at 50%, 75% and 90% of the week, once each, because the weekly limit drains quietly across many sessions.
 
 ## output-diet
 
@@ -152,6 +156,8 @@ cache-clock: cache expired after 7m 12s idle; this message re-sent 61,204 tokens
 
 Claude Code does not report the cache's lifetime on a turn, so cache-clock learns it. Until it knows, it assumes 5 minutes, says `≥3m left` and `likely cold`, and shows no toast, since on a 1-hour cache a 5-minute alarm would be false. The first cache hit after more than 5 minutes idle proves a 1-hour cache, and a miss proves 5 minutes; the answer is kept across sessions. Subagents have their own cache and do not move the clock.
 
+**Warns once before the cache expires:** 5 minutes before a 1-hour cache ends, 1 minute before a 5-minute one, and only when the context is big enough (20,000+ tokens) for the miss to matter. Until the cache's real lifetime is learned, it stays quiet.
+
 ## read-cap
 
 When Claude asks to `Read` a text file of more than 1,000 lines with no line range, the read is refused once, with the exact line count, and Claude is pointed at the outline tool:
@@ -171,6 +177,8 @@ The outline tool lists a file's functions, classes, types and Markdown headings 
 ```
 
 `new` is input the prompt cache did not serve (uncached input plus cache writes) and `out` is output; both are full price. `cached` is input read from the cache, at a tenth of the price. The pane opens with the session totals and the five turns that spent the most new and output tokens, each with the first line of its prompt, so you can see which requests made a session expensive. Opening it adds nothing to the conversation, and `/clear` starts a fresh receipt.
+
+**After an expensive turn** (3 or more points of the 5-hour session), a toast names it: `Turn 14 used 4 points of your session (1,204,000 new tokens in, …)`. The points are Claude Code's own readings before and after the turn.
 
 ## budget-guard
 

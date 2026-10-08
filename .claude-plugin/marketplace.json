@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools loaded per request, shorter shell output, capped and repeat file reads, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.7.0"
+    "version": "0.8.0"
   },
   "plugins": [
     {
       "name": "pro-hud",
       "source": "./plugins/pro-hud",
       "description": "Desktop heads-up display: live session, week and context meters, per-turn token receipt, usage in the spinner, compact tool rows.",
-      "version": "0.2.1"
+      "version": "0.3.0"
     },
     {
       "name": "output-diet",
@@ -37,7 +37,7 @@
       "name": "context-xray",
       "source": "./plugins/context-xray",
       "description": "/xray opens a pane with the exact breakdown of what fills the context window and which tools load on every request.",
-      "version": "0.1.1"
+      "version": "0.2.0"
     },
     {
       "name": "reread-guard",
@@ -49,7 +49,7 @@
       "name": "cache-clock",
       "source": "./plugins/cache-clock",
       "description": "Status line countdown until the prompt cache expires; once it has, the exact tokens your next message re-sends uncached.",
-      "version": "0.1.1"
+      "version": "0.2.0"
     },
     {
       "name": "read-cap",
@@ -61,7 +61,7 @@
       "name": "session-receipt",
       "source": "./plugins/session-receipt",
       "description": "/receipt opens a pane with the exact tokens every turn of the session spent and the costliest turns.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "name": "budget-guard",

@@ -49,7 +49,31 @@ export const row = (t: ReceiptTurn) =>
   `${t.agentTok > 0 ? ` (${tokens(t.agentTok)} subagents)` : ''} · ${t.tools} tools` +
   `${t.isRunning ? ' · running' : t.ms !== undefined ? ` · ${duration(t.ms)}` : ''}`
 
+/** A turn that used this many points of the 5-hour session gets a toast. */
+export const COSTLY_POINTS = 3
+
+const fiveHour = { latest: undefined as number | undefined, atStart: undefined as number | undefined, told: -1, n: 0 }
+
 export const register: Register = on => {
+  // After the turn, Claude Code reports the new session reading: if the turn
+  // cost 3+ points, say which one and how much, once.
+  on('session.measure', async ($, e, next) => {
+    const five = e.rateLimits.find(l => l.kind === 'five_hour')
+    if (five) {
+      fiveHour.latest = five.percentUsed
+      const used = fiveHour.atStart === undefined ? 0 : Math.round((five.percentUsed - fiveHour.atStart) * 10) / 10
+      const last = (await read($, turns)).at(-1)
+      if (last && used >= COSTLY_POINTS && fiveHour.told !== last.n) {
+        fiveHour.told = last.n
+        $.ui.toast(
+          `Turn ${last.n} used ${used} points of your session (${tokens(last.newTok)} new tokens in, ${tokens(last.cacheTok)} cached). /receipt shows every turn.`,
+          { timeoutMs: 12_000 },
+        )
+      }
+    }
+    return next(e)
+  })
+
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'receipt',
@@ -66,6 +90,7 @@ export const register: Register = on => {
 
   on('turn.start', async ($, e, next) => {
     if (e.agentId === undefined) {
+      fiveHour.atStart = fiveHour.latest
       await update($, turns, list =>
         [
           ...list,

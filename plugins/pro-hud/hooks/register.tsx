@@ -111,6 +111,7 @@ export const register: Register = on => {
   // them, and a card without a measured time simply shows none.
   let turnFiles = new Set<string>()
   let lastFive: number | undefined
+  let lastWeek: number | undefined
   const durations = new Map<string, number>()
 
   on('session.start', async ($, e, next) => {
@@ -251,6 +252,18 @@ export const register: Register = on => {
       }
     }
     if (five) lastFive = five.pct
+
+    // The weekly window drains quietly: say so at 50, 75 and 90%, once each.
+    const week = list.find(l => l.kind === 'seven_day')
+    if (week && lastWeek !== undefined) {
+      for (const mark of [90, 75, 50]) {
+        if (lastWeek < mark && week.pct >= mark) {
+          $.ui.toast(`Weekly usage at ${week.pct}%. Long chats re-send their whole context on every request; a fresh session (/handoff) keeps each request small.`, { timeoutMs: 12_000 })
+          break
+        }
+      }
+    }
+    if (week) lastWeek = week.pct
 
     return next(e)
   })

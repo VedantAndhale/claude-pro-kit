@@ -99,3 +99,43 @@ describe('context-xray', () => {
     expect((await texts(ui)).some(t => t.includes('━'))).toBe(true)
   })
 })
+
+import { crossedMarks } from '../hooks/register'
+
+describe('context-xray opens by itself', () => {
+  test('at 60% and 80%, once per crossing', () => {
+    expect(crossedMarks(undefined, 30)).toEqual([])
+    expect(crossedMarks(55, 61)).toEqual([60])
+    expect(crossedMarks(61, 70)).toEqual([])
+    expect(crossedMarks(50, 85)).toEqual([80, 60])
+  })
+
+  test('a reading past 60% opens the pane and measures; auto off keeps it shut', async ($, on) => {
+    let opened = 0
+    const store = new Map<string, unknown>()
+    on('clock.now', () => ({ value: 0 }))
+    on('command.register', () => ({ value: undefined }))
+    on('ui.toast', () => ({ value: undefined }))
+    on('store.get', ($, e) => ({ value: store.get(e.key) }))
+    on('store.set', ($, e) => {
+      store.set(e.key, e.value)
+      return { value: undefined }
+    })
+    on('ui.open', () => {
+      opened += 1
+      return { value: { isOpen: true } } as never
+    })
+    on('session.usage', () => ({ value: { context: { window: 1_000_000, breakdown: BREAKDOWN }, rateLimits: [] } }) as never)
+    on('session.measure', ($, e) => ({ changed: e.changed }))
+    const reading = (percent: number) => ({ rateLimits: [], context: { window: 1_000_000, percent }, changed: ['context'] }) as never
+
+    await $.session.measure(reading(40))
+    await $.session.measure(reading(62))
+    await $.session.measure(reading(64))
+    expect(opened).toBe(1)
+
+    await $.command.run({ command: 'xray', args: 'auto off' } as never)
+    await $.session.measure(reading(81))
+    expect(opened).toBe(1)
+  })
+})

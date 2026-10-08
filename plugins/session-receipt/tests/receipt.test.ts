@@ -44,3 +44,28 @@ describe('session-receipt', () => {
     expect(firstLine('x'.repeat(80))).toHaveLength(60)
   })
 })
+
+describe('the costly-turn toast', () => {
+  test('a turn that used 3+ session points gets one toast, naming the turn', async ($, on) => {
+    const toasts: string[] = []
+    on('command.register', () => ({ value: undefined }))
+    on('ui.toast', ($, e) => {
+      toasts.push(e.text)
+      return { value: undefined }
+    })
+    on('session.measure', ($, e) => ({ changed: e.changed }))
+    on('turn.start', ($, e) => ({ turnId: e.turnId }))
+    on('turn.complete', ($, e) => ({ text: e.answer }) as never)
+    const reading = (percentUsed: number) =>
+      ({ rateLimits: [{ kind: 'five_hour', percentUsed }], context: { window: 1_000_000 }, changed: ['rateLimits'] }) as never
+
+    await $.session.measure(reading(20))
+    await $.turn.start({ text: 'refactor everything', turnId: 't1' })
+    await $.turn.complete({ turnId: 't1', answer: 'done', durationMs: 1000, isAborted: false, reason: 'answer' } as never)
+    await $.session.measure(reading(24))
+    await $.session.measure(reading(25))
+
+    expect(toasts).toHaveLength(1)
+    expect(toasts[0]).toContain('Turn 1 used 4 points of your session')
+  })
+})

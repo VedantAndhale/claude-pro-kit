@@ -47,3 +47,12 @@ describe('cache-clock', () => {
     expect(statusText(-1, 61_204, assumed)).toBe('cache likely cold · next message re-sends 61,204 tokens')
   })
 })
+
+import { warnBefore } from '../hooks/register'
+
+describe('the expiry warning', () => {
+  test('5 minutes before a 1-hour cache ends, 1 minute before a 5-minute one', () => {
+    expect(warnBefore(60 * 60_000)).toBe(5 * 60_000)
+    expect(warnBefore(5 * 60_000)).toBe(60_000)
+  })
+})

@@ -127,6 +127,21 @@ describe('pro-hud band', () => {
   })
 })
 
+describe('weekly toasts', () => {
+  test('once each at 50, 75 and 90% of the week', async ($, on) => {
+    const { toasts } = engine(on)
+    await $.session.measure(measure(20, 48))
+    await $.session.measure(measure(20, 52))
+    await $.session.measure(measure(20, 60))
+    await $.session.measure(measure(20, 91))
+
+    expect(toasts.filter(t => t.startsWith('Weekly usage'))).toEqual([
+      'Weekly usage at 52%. Long chats re-send their whole context on every request; a fresh session (/handoff) keeps each request small.',
+      'Weekly usage at 91%. Long chats re-send their whole context on every request; a fresh session (/handoff) keeps each request small.',
+    ])
+  })
+})
+
 describe('/hud', () => {
   test('turns everything off and on with a toast, adding nothing to the transcript', async ($, on) => {
     const { toasts } = engine(on)

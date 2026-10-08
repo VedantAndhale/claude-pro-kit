@@ -61,12 +61,23 @@ let ttl: Ttl = { ms: FIVE_MIN, isConfirmed: false }
 let lastAt: number | undefined
 let contextTok = 0
 let isColdShown = false
+let isWarnShown = false
+
+/** How long before expiry to warn: 5 minutes of a 1-hour cache, 1 minute of a 5-minute one. */
+export const warnBefore = (ttlMs: number) => (ttlMs >= ONE_HOUR ? 5 * 60_000 : 60_000)
+
+/** Contexts smaller than this are cheap to re-send: no warning. */
+const WARN_MIN_TOKENS = 20_000
 let ticker: { cancel: () => void } | undefined
 
 async function tick($: EngineInterface) {
   if (lastAt === undefined) return
   const left = lastAt + ttl.ms - (await $.clock.now())
   $.ui.status(statusText(left, contextTok, ttl))
+  if (left > 0 && left <= warnBefore(ttl.ms) && !isWarnShown && ttl.isConfirmed && contextTok >= WARN_MIN_TOKENS) {
+    isWarnShown = true
+    $.ui.toast(`Prompt cache expires in ${formatLeft(left)}. Reply before then and ${tokens(contextTok)} tokens are re-used from cache; after it, they are re-sent at full price.`)
+  }
   if (left > 0) return
   ticker?.cancel()
   ticker = undefined
@@ -107,6 +118,7 @@ export const register: Register = on => {
     lastAt = at
     contextTok = contextOf(usage)
     isColdShown = false
+    isWarnShown = false
     if (ticker === undefined) ticker = $.clock.every(TICK_MS, () => void tick($))
     void tick($)
     return step
