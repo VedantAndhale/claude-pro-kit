@@ -20,13 +20,19 @@ const BAND = (extra: { hasSurvey?: boolean; isWorking?: boolean } = {}) => ({
   },
 })
 
-// The engine's side: a prompt box, Haiku answering as the test says, the
+// The engine's side: a prompt box, the model answering as the test says, the
 // rules file, and the toasts. The band's own drawing beneath is a marker.
 const engine = (on: On, reply: ModelCompleteResult = { isAnswered: true, text: BETTER, usage: USAGE }) => {
   const box = { text: '' }
-  const calls: { model: string; system?: string; prompt: string }[] = []
+  const calls: { model: string; effort?: string; system?: string; prompt: string }[] = []
   const toasts: string[] = []
+  const store = new Map<string, unknown>()
   on('command.register', ($, e) => ({ value: { command: e.name } }))
+  on('store.get', ($, e) => ({ value: store.get(e.key) }))
+  on('store.set', ($, e) => {
+    store.set(e.key, e.value)
+    return { value: undefined }
+  })
   on('fs.read', () => ({ value: '# RULES' }))
   on('prompt.read', () => ({ value: { text: box.text, cursor: box.text.length } }))
   on('prompt.fill', ($, e) => {
@@ -40,7 +46,7 @@ const engine = (on: On, reply: ModelCompleteResult = { isAnswered: true, text: B
   })
   on('prompt.submit', ($, e) => ({ text: e.text }))
   on('model.complete', ($, e) => {
-    calls.push({ model: e.model, system: e.system, prompt: e.prompt })
+    calls.push({ model: e.model, effort: e.effort, system: e.system, prompt: e.prompt })
     return { value: reply }
   })
   on('ui.toast', ($, e) => {
@@ -67,9 +73,9 @@ describe('prompt-polish helpers', () => {
   })
 
   test('writes exact usage with thousands separators', async () => {
-    expect(usageText(USAGE)).toBe('3,412 in, 186 out (Haiku)')
+    expect(usageText(USAGE)).toBe('3,412 in, 186 out (Opus)')
     expect(usageText({ ...USAGE, cache_creation_input_tokens: 1_000, cache_read_input_tokens: 9_050 })).toBe(
-      '4,412 in, 9,050 cached, 186 out (Haiku)',
+      '4,412 in, 9,050 cached, 186 out (Opus)',
     )
   })
 
@@ -93,7 +99,7 @@ describe('Improve', () => {
     expect(eng.box.text).toBe('fix the bug')
   })
 
-  test('rewrites the draft with Haiku, shows the exact usage, and Undo puts it back', async ($, on) => {
+  test('rewrites the draft with Opus at low effort, shows the exact usage, and Undo puts it back', async ($, on) => {
     const eng = engine(on)
     await edit($, type(DRAFT))
     const ui = await $.ui.mount({ plugin: 'prompt-polish', surface: 'terminal', ...BAND() })
@@ -102,12 +108,13 @@ describe('Improve', () => {
     await ui.press({ key: 'improve' })
 
     expect(eng.calls).toHaveLength(1)
-    expect(eng.calls[0]?.model).toBe('haiku')
+    expect(eng.calls[0]?.model).toBe('opus')
+    expect(eng.calls[0]?.effort).toBe('low')
     expect(eng.calls[0]?.system).toContain('# RULES')
     expect(eng.calls[0]?.system).toContain('Do NOT ask clarifying questions')
     expect(eng.calls[0]?.prompt).toContain(DRAFT)
     expect(eng.box.text).toBe(BETTER)
-    expect(eng.toasts).toEqual(['prompt-polish: 3,412 in, 186 out (Haiku)'])
+    expect(eng.toasts).toEqual(['prompt-polish: 3,412 in, 186 out (Opus)'])
     expect(await buttons(ui)).toEqual(['improve', 'undo'])
 
     await ui.press({ key: 'undo' })
@@ -122,7 +129,21 @@ describe('Improve', () => {
 
     expect(eng.calls).toHaveLength(1)
     expect(eng.box.text).toBe(BETTER)
-    expect(eng.toasts).toEqual(['prompt-polish: 3,412 in, 186 out (Haiku)'])
+    expect(eng.toasts).toEqual(['prompt-polish: 3,412 in, 186 out (Opus)'])
+  })
+
+  test('/polish model haiku switches the model, and the toast names it', async ($, on) => {
+    const eng = engine(on)
+    await $.command.run({ command: 'polish', args: 'model haiku' } as never)
+    expect(eng.toasts).toEqual(['prompt-polish: rewrites use Haiku'])
+    expect(eng.calls).toHaveLength(0)
+
+    await $.command.run({ command: 'polish', args: DRAFT } as never)
+    expect(eng.calls[0]?.model).toBe('haiku')
+    expect(eng.toasts[1]).toBe('prompt-polish: 3,412 in, 186 out (Haiku)')
+
+    await $.command.run({ command: 'polish', args: 'model gpt' } as never)
+    expect(eng.toasts[2]).toBe('prompt-polish: unknown model "gpt"; use haiku, sonnet or opus')
   })
 
   test('a failed call leaves the draft untouched and says why', async ($, on) => {
@@ -132,7 +153,7 @@ describe('Improve', () => {
     await ui.press({ key: 'improve' })
 
     expect(eng.box.text).toBe(DRAFT)
-    expect(eng.toasts).toEqual(['prompt-polish: Haiku call failed (overloaded, HTTP 529), draft unchanged'])
+    expect(eng.toasts).toEqual(['prompt-polish: Opus call failed (overloaded, HTTP 529), draft unchanged'])
     expect(await buttons(ui)).toEqual(['improve'])
   })
 
@@ -156,21 +177,22 @@ describe('the band', () => {
     expect((await ui.find({ type: 'Text' }))?.text).toBe('engine')
   })
 
-  test('is hidden while a turn runs or a survey holds the band', async ($, on) => {
+  test('stays up while a turn runs, and yields to a survey', async ($, on) => {
     engine(on)
     await edit($, type(DRAFT))
-    for (const extra of [{ isWorking: true }, { hasSurvey: true }]) {
-      const ui = await $.ui.mount({ plugin: 'prompt-polish', surface: 'terminal', ...BAND(extra) })
-      expect(await buttons(ui)).toEqual([])
-      await ui.unmount()
-    }
+    const working = await $.ui.mount({ plugin: 'prompt-polish', surface: 'terminal', ...BAND({ isWorking: true }) })
+    expect(await buttons(working)).toEqual(['improve'])
+    await working.unmount()
+    const survey = await $.ui.mount({ plugin: 'prompt-polish', surface: 'terminal', ...BAND({ hasSurvey: true }) })
+    expect(await buttons(survey)).toEqual([])
   })
 
-  test('draws the same buttons on the desktop', async ($, on) => {
+  test('shows Improve on the desktop even before any edit is seen', async ($, on) => {
     engine(on)
-    await edit($, type(DRAFT))
-    const ui = await $.ui.mount({ plugin: 'prompt-polish', surface: 'desktop', ...BAND() })
-
-    expect(await buttons(ui)).toEqual(['improve'])
+    for (const extra of [{}, { isWorking: true }]) {
+      const ui = await $.ui.mount({ plugin: 'prompt-polish', surface: 'desktop', ...BAND(extra) })
+      expect(await buttons(ui)).toEqual(['improve'])
+      await ui.unmount()
+    }
   })
 })

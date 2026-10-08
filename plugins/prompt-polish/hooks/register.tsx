@@ -3,7 +3,8 @@ import type { EngineInterface, ModelCompleteResult, ModelUsage, Register } from 
 
 import type { PolishBand } from '../types'
 
-// An Improve button above the prompt box: one Haiku call rewrites the draft
+// An Improve button above the prompt box: one model call (Opus at low effort
+// unless /polish model says otherwise) rewrites the draft
 // with the prompt-master rules (hooks/rules.md, MIT, github.com/nidhinjs/
 // prompt-master, see LICENSE-prompt-master; frontmatter stripped, its three
 // emoji markers written as words, references/patterns.md appended) and puts
@@ -12,6 +13,10 @@ import type { PolishBand } from '../types'
 // nothing is spent until the button (or /polish) is pressed.
 
 export const MIN_WORDS = 5
+export const MODELS = { haiku: 'Haiku', sonnet: 'Sonnet', opus: 'Opus' } as const
+export type PolishModel = keyof typeof MODELS
+// Opus writes the best prompts; low effort keeps its thinking, and the cost, small.
+export const DEFAULT_MODEL: PolishModel = 'opus'
 
 const band = atom({ plugin: 'prompt-polish', key: 'band' } as const, { hasDraft: false, isBusy: false } as PolishBand)
 
@@ -37,27 +42,32 @@ export const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).len
 const tokens = (n: number) => n.toLocaleString('en-US')
 
 /** Input is everything the call was billed as input for; cache reads named apart. */
-export const usageText = (u: ModelUsage) => {
+export const usageText = (u: ModelUsage, model: PolishModel = DEFAULT_MODEL) => {
   const cached = u.cache_read_input_tokens
-  return `${tokens(u.input_tokens + u.cache_creation_input_tokens)} in, ${cached > 0 ? `${tokens(cached)} cached, ` : ''}${tokens(u.output_tokens)} out (Haiku)`
+  return `${tokens(u.input_tokens + u.cache_creation_input_tokens)} in, ${cached > 0 ? `${tokens(cached)} cached, ` : ''}${tokens(u.output_tokens)} out (${MODELS[model]})`
 }
 
-/** Haiku's reply as the new draft: trimmed, one fence around the whole of it taken off. */
+/** The model's reply as the new draft: trimmed, one fence around the whole of it taken off. */
 export const cleanReply = (text: string) => {
   const t = text.trim()
   const fenced = /^```[^\n]*\n([\s\S]*)\n```$/.exec(t)
   return fenced?.[1] !== undefined && !/^```/m.test(fenced[1]) ? fenced[1].trim() : t
 }
 
-export const failText = (r: Exclude<ModelCompleteResult, { isAnswered: true }>) => {
+export const failText = (r: Exclude<ModelCompleteResult, { isAnswered: true }>, model: PolishModel = DEFAULT_MODEL) => {
   if (r.reason === 'aborted') return 'prompt-polish: cancelled, draft unchanged'
-  if (r.reason === 'empty-reply') return `prompt-polish: Haiku sent no text (${usageText(r.usage)}), draft unchanged`
-  return `prompt-polish: Haiku call failed (${r.error}${r.status !== null ? `, HTTP ${r.status}` : ''}), draft unchanged`
+  if (r.reason === 'empty-reply') return `prompt-polish: ${MODELS[model]} sent no text (${usageText(r.usage, model)}), draft unchanged`
+  return `prompt-polish: ${MODELS[model]} call failed (${r.error}${r.status !== null ? `, HTTP ${r.status}` : ''}), draft unchanged`
 }
 
 let rules: string | undefined
 let stop: AbortController | undefined
 let hasDraft = false
+
+const modelOf = async ($: EngineInterface): Promise<PolishModel> => {
+  const m = (await $.store.get('model')) as string | undefined
+  return m !== undefined && m in MODELS ? (m as PolishModel) : DEFAULT_MODEL
+}
 
 const loadRules = async ($: EngineInterface) => (rules ??= String(await $.fs.read(`${$.plugin.root}/hooks/rules.md`)))
 
@@ -77,30 +87,31 @@ export async function improve($: EngineInterface, given?: string) {
   }
 
   stop = new AbortController()
-  await setBand($, b => ({ ...b, isBusy: true }))
+  const model = await modelOf($)
+  await setBand($, b => ({ ...b, isBusy: true, model }))
   try {
     const system = `${await loadRules($)}\n\n${OVERRIDE}`
     const r = await $.model.complete(
-      { model: 'haiku', system, prompt: promptFor(draft), maxTokens: 4096 },
+      { model, effort: 'low', system, prompt: promptFor(draft), maxTokens: 4096 },
       { signal: stop.signal },
     )
     if (!r.isAnswered) {
-      $.ui.toast(failText(r))
+      $.ui.toast(failText(r, model))
       return
     }
     const text = cleanReply(r.text)
-    // Typed over while Haiku ran: the person's newer words win.
+    // Typed over while the model ran: the person's newer words win.
     if (fromBox && (await $.prompt.read()).text !== draft) {
-      $.ui.toast(`prompt-polish: draft changed while polishing, left as is (${usageText(r.usage)})`)
+      $.ui.toast(`prompt-polish: draft changed while polishing, left as is (${usageText(r.usage, model)})`)
       return
     }
     const filled = await $.prompt.fill({ text, mode: 'replace' })
     if (!filled.isFilled) {
-      $.ui.toast(`prompt-polish: the prompt box did not take the text (${filled.refusal ?? 'refused'}; ${usageText(r.usage)})`)
+      $.ui.toast(`prompt-polish: the prompt box did not take the text (${filled.refusal ?? 'refused'}; ${usageText(r.usage, model)})`)
       return
     }
     await setBand($, b => ({ ...b, original: draft, hasDraft: true }))
-    $.ui.toast(`prompt-polish: ${usageText(r.usage)}`)
+    $.ui.toast(`prompt-polish: ${usageText(r.usage, model)}`)
   } catch (err) {
     $.ui.toast(`prompt-polish: ${err instanceof Error ? err.message : String(err)}, draft unchanged`)
   } finally {
@@ -120,7 +131,7 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'polish',
-      description: 'Prompt polish: /polish <prompt> rewrites it with Haiku into the prompt box (one call, exact tokens shown)',
+      description: 'Prompt polish: /polish <prompt> rewrites it into the prompt box (one call, exact tokens shown) · /polish model haiku|sonnet|opus',
       argumentHint: '[prompt]',
     })
     return next(e)
@@ -130,6 +141,17 @@ export const register: Register = on => {
   // Typing /polish replaces the draft, so the text to polish rides as its args.
   on('command.run', { command: 'polish' }, async ($, e) => {
     const args = (e.args ?? '').trim()
+    const pick = /^model(?:\s+(\S+))?$/i.exec(args)
+    if (pick) {
+      const want = pick[1]?.toLowerCase()
+      if (want !== undefined && want in MODELS) await $.store.set('model', want)
+      else if (want !== undefined) {
+        $.ui.toast(`prompt-polish: unknown model "${want}"; use haiku, sonnet or opus`)
+        return {}
+      }
+      $.ui.toast(`prompt-polish: rewrites use ${MODELS[await modelOf($)]}`)
+      return {}
+    }
     if (args === '' && (await $.prompt.read()).text.trim() === '') {
       $.ui.toast('prompt-polish: type /polish <prompt>, or press Improve above a draft')
       return {}
@@ -158,17 +180,19 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // One row above the prompt; it yields to a survey and to a running turn,
-  // and draws on top of whatever the band below it holds.
+  // One row above the prompt; it yields to a survey and draws on top of
+  // whatever the band below it holds. A draft typed while a turn runs is
+  // polished the same. prompt.edit is the terminal editor's, so on desktop
+  // the row stays up and an empty box is answered by the under-5-words toast.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey || e.props.isWorking) return next(e)
+    if (e.props.hasSurvey) return next(e)
     const b = await read($, band)
-    if (!b.isBusy && !b.hasDraft) return next(e)
+    if (!b.isBusy && !b.hasDraft && e.surface !== 'desktop') return next(e)
 
     const { Box, Text, Button } = $.ui.resolve(e)
     const row = b.isBusy ? (
       <Box key="prompt-polish" flexDirection="row">
-        <Text dimColor>Improving with Haiku...  </Text>
+        <Text dimColor>{`Improving with ${MODELS[b.model ?? DEFAULT_MODEL]}...  `}</Text>
         <Button key="cancel" label="Cancel" hotkey="c" dimColor onPress={() => stop?.abort()} />
       </Box>
     ) : (
