@@ -5,15 +5,15 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, quiet flags on noisy commands, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, update notices. The mods spend no tokens themselves.",
-    "version": "0.13.0"
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, quiet flags on noisy commands, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, a local status pane for background tasks, exact facts kept after a compaction, the right GitHub account per repository, update notices, and an Improve button for prompts. Only prompt-polish calls a model, once per press; the other mods spend no tokens themselves.",
+    "version": "0.14.0"
   },
   "plugins": [
     {
       "name": "pro-hud",
       "source": "./plugins/pro-hud",
       "description": "Desktop heads-up display: live session, week and context meters, per-turn token receipt, usage in the spinner, compact tool rows.",
-      "version": "0.3.0"
+      "version": "0.3.1"
     },
     {
       "name": "output-diet",
@@ -24,8 +24,8 @@
     {
       "name": "turn-budget",
       "source": "./plugins/turn-budget",
-      "description": "When one turn crosses +5 session points, writes a handoff and continues in a fresh session by itself; /handoff any time.",
-      "version": "0.2.0"
+      "description": "When one turn crosses +5 session points, writes a handoff with your latest prompt in full and continues in a fresh session by itself; /handoff any time.",
+      "version": "0.3.0"
     },
     {
       "name": "tool-diet",
@@ -54,8 +54,8 @@
     {
       "name": "reread-guard",
       "source": "./plugins/reread-guard",
-      "description": "Skips Claude's identical re-read of a file that has not changed; a deliberate retry still goes through.",
-      "version": "0.1.0"
+      "description": "Skips Claude's identical re-read of a file that has not changed, with Read or a plain cat, sed -n, head, tail or Get-Content; a deliberate retry still goes through.",
+      "version": "0.2.0"
     },
     {
       "name": "write-guard",
@@ -84,8 +84,8 @@
     {
       "name": "read-cap",
       "source": "./plugins/read-cap",
-      "description": "Stops a whole-file read of a file over 1,000 lines once and gives Claude an outline tool so it reads only the range it needs.",
-      "version": "0.1.0"
+      "description": "Stops a whole-file read of a file over 1,000 lines once, with Read, cat or Get-Content, and gives Claude an outline tool so it reads only the range it needs.",
+      "version": "0.2.0"
     },
     {
       "name": "session-receipt",
@@ -116,6 +116,30 @@
       "source": "./plugins/answer-pane",
       "description": "Explain, plan and ELI5 pages drawn natively in a side pane; plan decisions as buttons, Respond fills the prompt box.",
       "version": "0.2.0"
+    },
+    {
+      "name": "peek",
+      "source": "./plugins/peek",
+      "description": "Typing \"status\" while background shells or subagents run opens a pane with each task's exact elapsed time and last output lines instead of sending the prompt to Claude; /peek opens it too.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "compact-keeper",
+      "source": "./plugins/compact-keeper",
+      "description": "After a compaction, adds a note of exact facts from before it (your latest prompt in full, up to 4 earlier ones, the todo list, the last failed shell command, files edited), at most 4,000 characters, with no model call.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "gh-account",
+      "source": "./plugins/gh-account",
+      "description": "Runs each git push, pull, fetch, clone and gh command with the token of the logged-in GitHub account that can see the repository's owner, without switching the active account.",
+      "version": "0.1.0"
+    },
+    {
+      "name": "prompt-polish",
+      "source": "./plugins/prompt-polish",
+      "description": "An Improve button above the prompt (and /polish) rewrites your draft with Haiku using the prompt-master rules and puts it back in the box, never sent; each press is one Haiku call, with its exact tokens shown.",
+      "version": "0.1.0"
     }
   ]
 }

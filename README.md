@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Eighteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. The mods themselves make no model calls and add nothing to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Twenty-two small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. One mod makes a model call: prompt-polish, once each time you press Improve, and never on its own. The others make none. None adds anything to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation; compact-keeper adds a note of at most 4,000 characters after a compaction): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -14,17 +14,21 @@ Eighteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) tha
 | **context-xray** | `/xray` opens the exact breakdown of what fills your context window | Everywhere |
 | **pro-hud** | Live meters above the prompt for your 5-hour session, your week and the context window, plus a per-turn receipt of tokens in, cached and out | Claude desktop app |
 | **output-diet** | Trims long shell output, search results and subagent reports before Claude reads them, keeping the head, the tail and the error lines; the untrimmed text is saved to a file Claude can open without a permission prompt | Everywhere |
-| **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed; a deliberate retry still goes through | Everywhere |
+| **reread-guard** | Skips Claude re-reading a file it already read when the file has not changed, with `Read` or a plain `cat`, `sed -n`, `head`, `tail` or `Get-Content`; a deliberate retry still goes through | Everywhere |
 | **write-guard** | Steers Claude to `Edit` instead of rewriting an existing file in full with `Write`; a deliberate rewrite still goes through | Everywhere |
 | **loop-guard** | Holds back a shell command that already failed twice in a row, so Claude changes approach | Everywhere |
 | **cmd-diet** | Adds quiet flags to noisy shell commands before they run, so Claude reads short output from the start; errors, failures and warnings stay in full | Everywhere |
+| **gh-account** | Runs each git push, pull, fetch, clone and `gh` command as the logged-in GitHub account that can see the repository, without switching the active account | Everywhere |
 | **cache-clock** | Counts down until the prompt cache expires; once it has, shows exactly how many tokens your next message will re-send uncached | Everywhere |
-| **read-cap** | Stops Claude reading a file over 1,000 lines whole and gives it an outline tool, so it reads only the lines it needs; a retry still reads the whole file | Everywhere |
+| **read-cap** | Stops Claude reading a file over 1,000 lines whole (with `Read`, `cat` or `Get-Content`) and gives it an outline tool, so it reads only the lines it needs; a retry still reads the whole file | Everywhere |
 | **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
+| **peek** | Typing `status` while background tasks run opens a pane with each one's exact elapsed time and last output lines, instead of sending the prompt to Claude | Everywhere |
 | **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
 | **turn-budget** | When one turn uses more than +5 session points, writes a handoff and continues in a fresh session by itself; `/handoff` any time | Everywhere |
+| **compact-keeper** | After a compaction, adds a note of exact facts from before it: your latest prompt in full, the todo list, the last failed command, files edited | Everywhere |
 | **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
 | **answer-pane** | Explain, plan and ELI5 pages drawn natively in a side pane; plans have decision buttons and Respond fills the prompt box | Desktop app (no diagrams in the terminal) |
+| **prompt-polish** | An Improve button above the prompt rewrites your draft with Haiku and puts it back in the box; Undo restores it. One Haiku call per press | Everywhere |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -50,13 +54,17 @@ In Claude Code:
 /plugin install write-guard@claude-pro-kit
 /plugin install loop-guard@claude-pro-kit
 /plugin install cmd-diet@claude-pro-kit
+/plugin install gh-account@claude-pro-kit
 /plugin install cache-clock@claude-pro-kit
 /plugin install read-cap@claude-pro-kit
 /plugin install session-receipt@claude-pro-kit
+/plugin install peek@claude-pro-kit
 /plugin install budget-guard@claude-pro-kit
 /plugin install turn-budget@claude-pro-kit
+/plugin install compact-keeper@claude-pro-kit
 /plugin install collision-guard@claude-pro-kit
 /plugin install answer-pane@claude-pro-kit
+/plugin install prompt-polish@claude-pro-kit
 /plugin install kit-updates@claude-pro-kit
 ```
 
@@ -150,7 +158,7 @@ On a wide window the three meters sit side by side on one row; on a narrow one e
 - The spinner gains `· session 20%`, and finished tool calls draw as one line: status dot, tool, target, time.
 - A toast when the session crosses 80% and 90%.
 
-`/hud` shows what is on; `/hud all on|off`, or `/hud band|spinner|cards on|off`. The answer is a toast, so toggling adds nothing to the conversation. It draws in the desktop app only and leaves the terminal as it is.
+`/hud` shows what is on; `/hud all on|off`, or `/hud band|spinner|cards on|off`. The answer is a toast, so toggling adds nothing to the conversation. It draws in the desktop app only and leaves the terminal as it is. Rows other mods put above the prompt, such as prompt-polish's Improve row, still draw beneath the band.
 
 **Weekly toasts** at 50%, 75% and 90% of the week, once each, because the weekly limit drains quietly across many sessions.
 
@@ -186,6 +194,8 @@ What Claude is told in place of the repeat read, kept to one line because the mo
 ```
 api.ts unchanged since you read it; use that copy. If it's gone from context, retry the same Read.
 ```
+
+**Shell reads too.** Claude often reads a file with the shell instead of `Read`: in the author's transcripts, 318 `sed -n` runs went past the guard. A shell command that only prints one file is now treated the same way: `cat FILE`, `sed -n 'A,Bp' FILE`, `head -n N` / `tail -n N`, and in PowerShell `Get-Content`, `gc`, `cat` or `type` (with `-TotalCount`, `-Head`, `-First`, `-Tail`, `-Last` or `-Raw`). The same range of the same unchanged file is skipped once, and retrying the same command goes through. A whole `cat` after a whole `Read` that showed every line counts as a repeat. A pipe, a chain, a variable, a glob or any other flag runs untouched. A shell read never counts as a `Read`, since `Edit` needs a real one first.
 
 The status line counts them: `2 re-reads skipped`.
 
@@ -236,6 +246,21 @@ In a live headless run (`git status && python -m pytest` on 41 test files, one f
 - If a tool rejects a flag (an old version), that rule stops for the session and Claude's retry runs the command as typed.
 - The status line counts them: `3 commands quieted`.
 
+## gh-account
+
+With two GitHub accounts logged in to `gh`, a push to a repository the other account owns fails, and Claude spends turns on `gh auth status` and `gh auth switch`. Before a `Bash` or `PowerShell` command runs, gh-account matches each `git push`, `pull`, `fetch`, `clone`, `ls-remote` and `gh` step to the repository's owner, and the owner to a logged-in account. When that account is not gh's active one, that step alone runs with its token:
+
+```
+GH_TOKEN="$(gh auth token --user ACCOUNT)" git push
+```
+
+The token itself never appears in the command or its output, and the active account is not switched. For git it also asks `gh` for the credential.
+
+- The owner comes from a URL in the command, `-R owner/repo`, a `gh api repos/<owner>/...` path, or the folder's remotes. With no remote named, every remote must point at the same owner.
+- The account is the one whose login is the owner, else the one account that is a member of that organization. The accounts come from `gh auth status`, and organizations from `gh api user/orgs`. What it learns is kept across sessions.
+- Nothing is guessed: no owner, more than one matching account, or anything unclear leaves the command as typed. It also leaves alone `gh auth` and other `gh` commands that reach no repository, a command that already sets `GH_TOKEN`, a token from the environment, git over ssh, hosts other than github.com, and subshells or substitutions.
+- `/gh-account` shows which account each owner uses, and `/gh-account forget` clears it. Answers are toasts. The status line counts them: `2 commands sent as <account>`.
+
 ## cache-clock
 
 Claude's prompt cache keeps your conversation for a fixed time after each request. Reply within it and the context is read from cache; reply after it and the whole context is sent again at full price. That message pays the cache-write price (1.25 times the input price for a 5-minute cache, 2 times for a 1-hour one) on every token instead of the cache-read price (0.1 times): 12.5 to 20 times more for the same context, and nothing on screen says so.
@@ -267,6 +292,8 @@ big.ts has 3,000 lines. Call mcp__read-cap__outline to see its definitions with 
 
 The outline tool lists a file's functions, classes, types and Markdown headings with their line numbers. It is built from the file on disk with no model call, and covers JavaScript, TypeScript, Python, Go, Rust, Java, C#, Kotlin, Swift and Markdown. In a live run on a 3,000-line file, Claude called the outline, then read the 10 lines it needed instead of the whole file. Retrying the same whole-file Read always goes through, ranged reads, images and PDFs are never touched, and the status line counts the reads capped.
 
+A plain shell read of the whole file is held once the same way: `cat FILE` in Bash, or `Get-Content`, `gc`, `cat` or `type` in PowerShell, and Claude is told to retry the same command to read it whole. A `Read` and a shell read of the same file share the one hold. A ranged print (`sed -n`, `head`, `tail`) and anything else pass.
+
 ## session-receipt
 
 `/receipt` opens a pane listing every turn of the session with the tokens its requests reported, main thread and subagents together:
@@ -278,6 +305,31 @@ The outline tool lists a file's functions, classes, types and Markdown headings 
 `new` is input the prompt cache did not serve (uncached input plus cache writes) and `out` is output; both are full price. `cached` is input read from the cache, at a tenth of the price. The pane opens with the session totals and the five turns that spent the most new and output tokens, each with the first line of its prompt, so you can see which requests made a session expensive. Opening it adds nothing to the conversation, and `/clear` starts a fresh receipt.
 
 **After an expensive turn** (3 or more points of the 5-hour session), a toast names it: `Turn 14 used 4 points of your session (1,204,000 new tokens in, …)`. The points are Claude Code's own readings before and after the turn.
+
+## peek
+
+Asking Claude how a background task is going re-sends the whole conversation. In the author's transcripts, "status" was typed 24 times in 4 sessions, and those 24 requests re-sent 15,377,344 tokens in total.
+
+When you type `status` (trimmed, any case) while background shell tasks or subagents run, peek drops the prompt, so it is never sent to Claude, says `peek: 2 running, opened in the pane`, and opens a pane instead:
+
+```
+2 running
+
+shell  npm run build  ·  4m 12s
+  [##########----------] 52%  as reported by the task's output
+  src/app.ts compiled
+  src/db.ts compiled
+  src/ui.ts compiled
+
+subagent  Find the config loader  ·  1m 3s
+  Explore · running
+```
+
+- Each task shows its type, its command or description, an exact elapsed timer that counts up while the pane is open, and the last 3 lines of its output.
+- The bar is drawn only when the task's own output prints a percent. Nothing is estimated.
+- Tasks that finished in the last 10 minutes are listed below, with how they ended.
+- With nothing running, `status` goes to Claude as normal. `/peek` opens the same pane at any time.
+- No model calls. Opening the pane adds nothing to the conversation.
 
 ## budget-guard
 
@@ -296,7 +348,7 @@ budget-guard looks at your session before a turn starts. turn-budget watches one
 **At the limit, it hands off to a fresh session by itself** (the default):
 
 1. The turn stops before the next request. A running command is never cut off.
-2. It writes a handoff from exact session data, with no model call: your last prompts, the todo list, the files Claude edited, `git status --short`, `git diff --stat`, and the last thing Claude said. It's saved under `~/.claude/handoffs/`.
+2. It writes a handoff from exact session data, with no model call: your last prompts (the latest in full, with its line breaks; earlier ones shortened), the todo list, the files Claude edited, `git status --short`, `git diff --stat`, and the last thing Claude said. It's saved under `~/.claude/handoffs/`.
 3. It clears the chat and sends the handoff as the first message of the fresh session, so Claude carries on with a few thousand tokens of context instead of re-sending the whole old conversation on every request.
 4. A toast tells you it happened. The old conversation stays in `/resume`.
 
@@ -316,6 +368,23 @@ This turn has used 6 points of your session (20% → 26%, limit +5) over 14 requ
 **Stop here** ends the turn and leaves Claude one line saying you stopped it. Anything but a clear Continue counts as Stop. A question nobody can answer (a `-p` run) never stops a turn.
 
 `/turn-budget` shows the settings, `/turn-budget 8` sets the points, `/turn-budget tokens 1000000` the token limit, `/turn-budget handoff|ask` what happens at the limit, and `/turn-budget off|on` switches it. Answers are toasts. While a turn runs, the status line reads `turn budget 3/5 pts`.
+
+## compact-keeper
+
+A compaction replaces the conversation with a model-written summary, which can drop or paraphrase what matters most. The author's sessions hold 63 compaction summaries.
+
+After each compaction of the main conversation, compact-keeper appends a note under the summary, titled `Kept exactly (compact-keeper)`. It is built from the session on your machine, with no model call:
+
+- your latest prompt in full, plus up to 4 earlier ones, each cut at 600 characters
+- the todo list, with each item's status
+- the last failed shell command, with its exit code
+- the files edited this session, with how many edits each
+
+The note is capped at 4,000 characters, and the oldest prompts are dropped first; the latest prompt is cut only if it alone is over the cap. It tells Claude to trust these facts where the summary differs. A subagent's own compaction is left alone, and `/clear` starts over.
+
+A toast gives the exact counts, in the form `compact-keeper kept <n> prompts, <n> files, <n> todos, the last failed command (<n> chars)`. `/compact-keeper` opens the last note in a pane.
+
+What it costs: the note adds up to 4,000 characters to every request after a compaction.
 
 ## collision-guard
 
@@ -359,6 +428,21 @@ What it costs per request, measured with `claude -p "Reply with just OK."`:
 | `/pages auto off`: pages only when you ask | +174 |
 
 The mod makes no model calls: the draft is Claude's answer, and drawing happens on your machine.
+
+## prompt-polish
+
+This is the one mod in the kit that makes a model call, and only when you press it.
+
+While you have a draft in the prompt box, a row above it shows **[Improve]**, and **[Undo]** after a rewrite. `ctrl+x tab` focuses the row; then `i` improves, `u` undoes, and `c` cancels a call in progress. `/polish <prompt>` does the same from a command.
+
+Improve sends the draft to Haiku with a bundled copy of the [prompt-master](https://github.com/nidhinjs/prompt-master) rules by nidhinjs (MIT; its license is in `LICENSE-prompt-master`), and puts the rewrite back in the box. It never sends it: you read it, edit it, or press Undo to get your original back.
+
+- Drafts under 5 words are not sent; a toast says so.
+- File paths, code, commands, names, URLs and exact numbers are kept word for word, and Haiku is told not to add requirements the draft does not state.
+- If you type over the draft while Haiku runs, your newer words win and the rewrite is dropped.
+- A toast shows the call's exact tokens as the API reported them.
+
+One measured press: 13,790 input tokens and 108 output tokens. Haiku calls count toward your plan's usage limits like any other.
 
 ## kit-updates
 
