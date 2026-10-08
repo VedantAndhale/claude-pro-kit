@@ -336,6 +336,8 @@ export const register: Register = on => {
         ]
       : []
 
+    // Other mods' rows (prompt-polish) still draw beneath the band.
+    const below = await next(e)
     return (
       <Box flexDirection="column">
         <Box flexDirection={wide ? 'row' : 'column'}>{meters}</Box>
@@ -361,6 +363,7 @@ export const register: Register = on => {
         {ctx.pct !== undefined && ctx.pct >= COMPACT_AT && (
           <Text color={WARN}>{'Context is filling up — run /compact before starting a large task.'}</Text>
         )}
+        {below}
       </Box>
     )
   })
