@@ -187,6 +187,17 @@ describe('the band', () => {
     expect(await buttons(survey)).toEqual([])
   })
 
+  test('puts Improve in the desktop footer beside the mode labels, and not in the terminal one', async ($, on) => {
+    engine(on)
+    const footer = { component: 'SessionMode' as const, props: { modes: ['focus'] } }
+    const desk = await $.ui.mount({ plugin: 'prompt-polish', surface: 'desktop', ...footer })
+    expect(await buttons(desk)).toEqual(['improve'])
+    expect((await desk.find({ type: 'Text' }))?.text).toBe('engine')
+    await desk.unmount()
+    const term = await $.ui.mount({ plugin: 'prompt-polish', surface: 'terminal', ...footer })
+    expect(await buttons(term)).toEqual([])
+  })
+
   test('shows Improve on the desktop even before any edit is seen', async ($, on) => {
     engine(on)
     for (const extra of [{}, { isWorking: true }]) {

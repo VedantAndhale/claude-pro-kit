@@ -127,6 +127,27 @@ export async function undo($: EngineInterface) {
   if (filled.isFilled) await setBand($, b => ({ ...b, original: undefined, hasDraft: original.trim() !== '' }))
 }
 
+// Improve and Undo, or Cancel while a call runs: the band's row and the
+// desktop footer draw the same.
+const controls = ($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0], b: PolishBand) => {
+  const { Box, Text, Button } = $.ui.resolve(e)
+  return b.isBusy ? (
+    <Box key="prompt-polish" flexDirection="row">
+      <Text dimColor>{`Improving with ${MODELS[b.model ?? DEFAULT_MODEL]}...  `}</Text>
+      <Button key="cancel" label="Cancel" hotkey="c" dimColor onPress={() => stop?.abort()} />
+    </Box>
+  ) : (
+    <Box key="prompt-polish" flexDirection="row">
+      <Button key="improve" label="Improve" hotkey="i" onPress={() => improve($)} />
+      {b.original !== undefined && (
+        <Box marginLeft={2}>
+          <Button key="undo" label="Undo" hotkey="u" onPress={() => undo($)} />
+        </Box>
+      )}
+    </Box>
+  )
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -180,6 +201,21 @@ export const register: Register = on => {
     return next(e)
   })
 
+  // On the desktop the same buttons also sit in the prompt footer, at its
+  // right beside the model and Send, ahead of the engine's mode labels.
+  on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+    if (e.surface !== 'desktop') return next(e)
+    const b = await read($, band)
+    const { Box } = $.ui.resolve(e)
+    const below = await next(e)
+    return (
+      <Box flexDirection="row" alignItems="center">
+        {controls($, e, b)}
+        <Box marginLeft={1}>{below}</Box>
+      </Box>
+    )
+  })
+
   // One row above the prompt; it yields to a survey and draws on top of
   // whatever the band below it holds. A draft typed while a turn runs is
   // polished the same. prompt.edit is the terminal editor's, so on desktop
@@ -189,22 +225,8 @@ export const register: Register = on => {
     const b = await read($, band)
     if (!b.isBusy && !b.hasDraft && e.surface !== 'desktop') return next(e)
 
-    const { Box, Text, Button } = $.ui.resolve(e)
-    const row = b.isBusy ? (
-      <Box key="prompt-polish" flexDirection="row">
-        <Text dimColor>{`Improving with ${MODELS[b.model ?? DEFAULT_MODEL]}...  `}</Text>
-        <Button key="cancel" label="Cancel" hotkey="c" dimColor onPress={() => stop?.abort()} />
-      </Box>
-    ) : (
-      <Box key="prompt-polish" flexDirection="row">
-        <Button key="improve" label="Improve" hotkey="i" onPress={() => improve($)} />
-        {b.original !== undefined && (
-          <Box marginLeft={2}>
-            <Button key="undo" label="Undo" hotkey="u" onPress={() => undo($)} />
-          </Box>
-        )}
-      </Box>
-    )
+    const { Box } = $.ui.resolve(e)
+    const row = controls($, e, b)
     const below = await next(e)
     return (
       <Box flexDirection="column">
