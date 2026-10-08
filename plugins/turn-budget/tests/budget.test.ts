@@ -89,10 +89,6 @@ const engine = (on: On, answer?: string) => {
     sent.aborted.push(e.turnId)
     return { value: undefined }
   })
-  on('session.append', ($, e) => {
-    sent.notes.push(String((e.message.content[0] as { text?: string }).text))
-    return { message: e.message, uuid: 'note' } as never
-  })
   on('tool.call', { tool: 'AskUserQuestion' }, ($, e) => {
     sent.asked += 1
     if (answer === undefined) return { isError: true as const, result: 'dismissed', text: 'dismissed' }
