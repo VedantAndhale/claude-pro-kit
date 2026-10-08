@@ -127,7 +127,7 @@ export async function undo($: EngineInterface) {
   if (filled.isFilled) await setBand($, b => ({ ...b, original: undefined, hasDraft: original.trim() !== '' }))
 }
 
-// Improve and Undo, or Cancel while a call runs: the band's row and the
+// Improve and Undo, or Cancel while a call runs: the terminal's row and the
 // desktop footer draw the same.
 const controls = ($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0], b: PolishBand) => {
   const { Box, Text, Button } = $.ui.resolve(e)
@@ -174,7 +174,7 @@ export const register: Register = on => {
       return {}
     }
     if (args === '' && (await $.prompt.read()).text.trim() === '') {
-      $.ui.toast('prompt-polish: type /polish <prompt>, or press Improve above a draft')
+      $.ui.toast('prompt-polish: type /polish <prompt>, or press Improve')
       return {}
     }
     await improve($, args === '' ? undefined : args)
@@ -201,8 +201,9 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // On the desktop the same buttons also sit in the prompt footer, at its
-  // right beside the model and Send, ahead of the engine's mode labels.
+  // On the desktop the buttons sit in the prompt footer, at its right beside
+  // the model and Send, ahead of the engine's mode labels. They stay up while
+  // a turn runs, so the next prompt can be polished as it is typed.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
     if (e.surface !== 'desktop') return next(e)
     const b = await read($, band)
@@ -216,14 +217,13 @@ export const register: Register = on => {
     )
   })
 
-  // One row above the prompt; it yields to a survey and draws on top of
-  // whatever the band below it holds. A draft typed while a turn runs is
-  // polished the same. prompt.edit is the terminal editor's, so on desktop
-  // the row stays up and an empty box is answered by the under-5-words toast.
+  // The terminal has no footer slot: one row above the prompt, shown over a
+  // draft or a call in progress. It yields to a survey and draws on top of
+  // whatever the band below it holds.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
-    if (e.props.hasSurvey) return next(e)
+    if (e.surface === 'desktop' || e.props.hasSurvey) return next(e)
     const b = await read($, band)
-    if (!b.isBusy && !b.hasDraft && e.surface !== 'desktop') return next(e)
+    if (!b.isBusy && !b.hasDraft) return next(e)
 
     const { Box } = $.ui.resolve(e)
     const row = controls($, e, b)

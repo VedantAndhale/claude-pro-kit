@@ -28,7 +28,7 @@ Twenty-two small [mods](https://code.claude.com/docs/en/plugins/mods/overview) t
 | **compact-keeper** | After a compaction, adds a note of exact facts from before it: your latest prompt in full, the todo list, the last failed command, files edited | Everywhere |
 | **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
 | **answer-pane** | Explain, plan and ELI5 pages drawn natively in a side pane; plans have decision buttons and Respond fills the prompt box | Desktop app (no diagrams in the terminal) |
-| **prompt-polish** | An Improve button above the prompt rewrites your draft with Opus at low effort and puts it back in the box; Undo restores it. One model call per press | Everywhere |
+| **prompt-polish** | An Improve button beside Send (above the prompt in the terminal) rewrites your draft with Opus at low effort and puts it back in the box; Undo restores it. One model call per press | Everywhere |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs updates and new mods | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -158,7 +158,7 @@ On a wide window the three meters sit side by side on one row; on a narrow one e
 - The spinner gains `· session 20%`, and finished tool calls draw as one line: status dot, tool, target, time.
 - A toast when the session crosses 80% and 90%.
 
-`/hud` shows what is on; `/hud all on|off`, or `/hud band|spinner|cards on|off`. The answer is a toast, so toggling adds nothing to the conversation. It draws in the desktop app only and leaves the terminal as it is. Rows other mods put above the prompt, such as prompt-polish's Improve row, still draw beneath the band.
+`/hud` shows what is on; `/hud all on|off`, or `/hud band|spinner|cards on|off`. The answer is a toast, so toggling adds nothing to the conversation. It draws in the desktop app only and leaves the terminal as it is. Rows other mods put above the prompt still draw beneath the band.
 
 **Weekly toasts** at 50%, 75% and 90% of the week, once each, because the weekly limit drains quietly across many sessions.
 
@@ -433,7 +433,7 @@ The mod makes no model calls: the draft is Claude's answer, and drawing happens 
 
 This is the one mod in the kit that makes a model call, and only when you press it.
 
-A row above the prompt box shows **[Improve]**, and **[Undo]** after a rewrite. `ctrl+x tab` focuses the row; then `i` improves, `u` undoes, and `c` cancels a call in progress. `/polish <prompt>` does the same from a command. In the desktop app the same buttons also sit in the footer, at its right beside the model and Send. The row stays up while Claude works, so you can polish the next prompt as you type it. In the terminal it shows only while the box holds a draft.
+In the desktop app **[Improve]** sits in the footer under the prompt box, at its right beside the model and Send, with **[Undo]** after a rewrite. It stays up while Claude works, so you can polish the next prompt as you type it. In the terminal the same buttons show in a row above the prompt while the box holds a draft; `ctrl+x tab` focuses the row, then `i` improves, `u` undoes, and `c` cancels a call in progress. `/polish <prompt>` does the same from a command.
 
 Improve sends the draft to Opus at low effort with a bundled copy of the [prompt-master](https://github.com/nidhinjs/prompt-master) rules by nidhinjs (MIT; its license is in `LICENSE-prompt-master`), and puts the rewrite back in the box. It never sends it: you read it, edit it, or press Undo to get your original back.
 

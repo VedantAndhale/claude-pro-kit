@@ -1,6 +1,6 @@
 {
   "name": "prompt-polish",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "An Improve button above the prompt (and /polish) rewrites your draft with Opus at low effort (/polish model picks another) using the prompt-master rules (MIT, nidhinjs/prompt-master); Undo puts the original back. Each press is one model call; its exact tokens are shown.",
   "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" },
   "types": "./types/index.d.ts"

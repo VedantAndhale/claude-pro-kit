@@ -198,11 +198,11 @@ describe('the band', () => {
     expect(await buttons(term)).toEqual([])
   })
 
-  test('shows Improve on the desktop even before any edit is seen', async ($, on) => {
+  test('on the desktop draws no row above the prompt, only the footer button', async ($, on) => {
     engine(on)
     for (const extra of [{}, { isWorking: true }]) {
       const ui = await $.ui.mount({ plugin: 'prompt-polish', surface: 'desktop', ...BAND(extra) })
-      expect(await buttons(ui)).toEqual(['improve'])
+      expect(await buttons(ui)).toEqual([])
       await ui.unmount()
     }
   })
