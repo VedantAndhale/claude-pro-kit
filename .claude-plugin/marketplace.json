@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, quiet flags on noisy commands, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, a local status pane for background tasks, exact facts kept after a compaction, the right GitHub account per repository, update notices, and an Improve button for prompts. Only prompt-polish calls a model, once per press; the other mods spend no tokens themselves.",
-    "version": "0.14.0"
+    "version": "0.14.1"
   },
   "plugins": [
     {
@@ -102,8 +102,8 @@
     {
       "name": "kit-updates",
       "source": "./plugins/kit-updates",
-      "description": "Installs updates to your claude-pro-kit mods by itself at session start, and announces new mods (or installs them too, with /kit-update auto-new on).",
-      "version": "0.4.0"
+      "description": "Installs updates to your claude-pro-kit mods by itself at session start, and announces new mods (or installs them too, with /kit-update auto-new on); /kit-update installs updates and new mods now.",
+      "version": "0.5.0"
     },
     {
       "name": "collision-guard",
@@ -138,8 +138,8 @@
     {
       "name": "prompt-polish",
       "source": "./plugins/prompt-polish",
-      "description": "An Improve button above the prompt (and /polish) rewrites your draft with Haiku using the prompt-master rules and puts it back in the box, never sent; each press is one Haiku call, with its exact tokens shown.",
-      "version": "0.1.0"
+      "description": "An Improve button above the prompt (and /polish) rewrites your draft with Opus at low effort (or Haiku or Sonnet) using the prompt-master rules and puts it back in the box, never sent; each press is one model call, with its exact tokens shown.",
+      "version": "0.1.1"
     }
   ]
 }

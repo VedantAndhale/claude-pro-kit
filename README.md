@@ -28,8 +28,8 @@ Twenty-two small [mods](https://code.claude.com/docs/en/plugins/mods/overview) t
 | **compact-keeper** | After a compaction, adds a note of exact facts from before it: your latest prompt in full, the todo list, the last failed command, files edited | Everywhere |
 | **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
 | **answer-pane** | Explain, plan and ELI5 pages drawn natively in a side pane; plans have decision buttons and Respond fills the prompt box | Desktop app (no diagrams in the terminal) |
-| **prompt-polish** | An Improve button above the prompt rewrites your draft with Haiku and puts it back in the box; Undo restores it. One Haiku call per press | Everywhere |
-| **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs it | Everywhere |
+| **prompt-polish** | An Improve button above the prompt rewrites your draft with Opus at low effort and puts it back in the box; Undo restores it. One model call per press | Everywhere |
+| **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs updates and new mods | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
 
@@ -433,16 +433,16 @@ The mod makes no model calls: the draft is Claude's answer, and drawing happens 
 
 This is the one mod in the kit that makes a model call, and only when you press it.
 
-While you have a draft in the prompt box, a row above it shows **[Improve]**, and **[Undo]** after a rewrite. `ctrl+x tab` focuses the row; then `i` improves, `u` undoes, and `c` cancels a call in progress. `/polish <prompt>` does the same from a command.
+A row above the prompt box shows **[Improve]**, and **[Undo]** after a rewrite. `ctrl+x tab` focuses the row; then `i` improves, `u` undoes, and `c` cancels a call in progress. `/polish <prompt>` does the same from a command. The row stays up while Claude works, so you can polish the next prompt as you type it. In the terminal it shows only while the box holds a draft.
 
-Improve sends the draft to Haiku with a bundled copy of the [prompt-master](https://github.com/nidhinjs/prompt-master) rules by nidhinjs (MIT; its license is in `LICENSE-prompt-master`), and puts the rewrite back in the box. It never sends it: you read it, edit it, or press Undo to get your original back.
+Improve sends the draft to Opus at low effort with a bundled copy of the [prompt-master](https://github.com/nidhinjs/prompt-master) rules by nidhinjs (MIT; its license is in `LICENSE-prompt-master`), and puts the rewrite back in the box. It never sends it: you read it, edit it, or press Undo to get your original back.
 
 - Drafts under 5 words are not sent; a toast says so.
-- File paths, code, commands, names, URLs and exact numbers are kept word for word, and Haiku is told not to add requirements the draft does not state.
-- If you type over the draft while Haiku runs, your newer words win and the rewrite is dropped.
+- File paths, code, commands, names, URLs and exact numbers are kept word for word, and the model is told not to add requirements the draft does not state.
+- If you type over the draft while the model runs, your newer words win and the rewrite is dropped.
 - A toast shows the call's exact tokens as the API reported them.
 
-One measured press: 13,790 input tokens and 108 output tokens. Haiku calls count toward your plan's usage limits like any other.
+`/polish model haiku|sonnet|opus` picks the model; the toast names the one used. One measured press on Opus at low effort: 13,790 input tokens and 73 output tokens, answered in 2.2 s. Most of the input is the prompt-master rules. These calls count toward your plan's usage limits like any other request on that model; Haiku is the cheaper choice if you press often.
 
 ## kit-updates
 
@@ -452,7 +452,7 @@ At the start of each session it downloads this repo's `marketplace.json` (about 
 claude-pro-kit: 2 updates available (pro-hud 0.2.1 → 0.2.2, tool-diet 0.1.2 → 0.1.3). Run /kit-update.
 ```
 
-Updates to the mods you have installed **install by themselves** at session start (`/kit-update auto off` to only announce them). `/kit-update` runs the same thing now: `claude plugin marketplace update claude-pro-kit`, then `claude plugin update` for each outdated mod. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. When a new mod joins the kit, it says so once, with the install command; mods already in the kit when you installed kit-updates are not announced. To have new mods install themselves instead, run `/kit-update auto-new on` (off by default); a mod you uninstalled is never put back.
+Updates to the mods you have installed **install by themselves** at session start (`/kit-update auto off` to only announce them). `/kit-update` runs the same thing now: `claude plugin marketplace update claude-pro-kit`, then `claude plugin update` for each outdated mod and `claude plugin install` for each kit mod you never had. It reads the versions from the refreshed marketplace, not the GitHub file, whose copy can lag a push by a few minutes. Restart Claude Code to load the new versions. Nothing is sent to the model, and it stays silent when everything is current or GitHub cannot be reached. When a new mod joins the kit, it says so once, with the install command; mods already in the kit when you installed kit-updates are not announced. To have new mods install themselves instead, run `/kit-update auto-new on` (off by default); a mod you uninstalled is never put back.
 
 ## Benchmark
 
