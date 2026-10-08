@@ -1,0 +1,7 @@
+{
+  "name": "prompt-polish",
+  "version": "0.1.0",
+  "description": "An Improve button above the prompt (and /polish) rewrites your draft with Haiku using the prompt-master rules (MIT, nidhinjs/prompt-master); Undo puts the original back. Each press is one Haiku call; its exact tokens are shown.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" },
+  "types": "./types/index.d.ts"
+}
