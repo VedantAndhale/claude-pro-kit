@@ -96,6 +96,8 @@ const engine = (on: On) => {
   on('session.start', ($, e) => ({ cwd: e.cwd }) as never)
   on('prompt.attachment', ($, e) => ({ text: e.text }))
   on('skill.prompt', ($, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: {} as never }))
+  on('prompt.submit', ($, e) => ({ text: e.text }))
   return { store, toasts, statuses }
 }
 
@@ -112,11 +114,19 @@ describe('skill-diet', () => {
     expect(statuses.at(-1)).toBe(`3 skills by name only, ${LISTING.length - text!.length} characters off`)
   })
 
+  test('treats the first listing seen in a project as old skills, however many sessions came before', async ($, on) => {
+    engine(on)
+    await $.session.start({ source: 'startup', cwd: 'C:/repo' } as never)
+    await $.session.start({ source: 'startup', cwd: 'C:/repo' } as never)
+
+    expect((await $.prompt.attachment(listing)).text).toContain(`${NAMES_ONLY} hyperframes, anthropic-skills:docs, simplify`)
+  })
+
   test('lists a used skill in full from the next session, in that project only', async ($, on) => {
     engine(on)
     await $.session.start({ source: 'startup', cwd: 'C:/repo' } as never)
     await $.prompt.attachment(listing)
-    await $.skill.prompt({ skill: 'simplify', text: 'Review it.' } as never)
+    await $.tool.call({ tool: 'Skill', skill: 'simplify' } as never)
 
     // Same session: the listing does not change mid-session.
     expect((await $.prompt.attachment(listing)).text).not.toContain('- simplify:')
@@ -126,6 +136,19 @@ describe('skill-diet', () => {
 
     await $.session.start({ source: 'startup', cwd: 'C:/other' } as never)
     expect((await $.prompt.attachment(listing)).text).not.toContain('- simplify:')
+  })
+
+  test('typing /name counts as a use, by bare name too', async ($, on) => {
+    engine(on)
+    await $.session.start({ source: 'startup', cwd: 'C:/repo' } as never)
+    await $.prompt.attachment(listing)
+    await $.prompt.submit({ text: '/docs write it up', wait: false, origin: { kind: 'user' } } as never)
+    await $.prompt.submit({ text: '/nonsense', wait: false, origin: { kind: 'user' } } as never)
+    await $.session.start({ source: 'startup', cwd: 'C:/repo' } as never)
+
+    const { text } = await $.prompt.attachment(listing)
+    expect(text).toContain('- anthropic-skills:docs: docs')
+    expect(text).toContain(`${NAMES_ONLY} hyperframes, simplify`)
   })
 
   test('a skill installed after the first session stays listed while it is new', async ($, on) => {

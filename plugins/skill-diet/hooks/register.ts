@@ -87,7 +87,17 @@ export const rewriteListing = (text: string, hide: (skill: string) => boolean): 
   return { text: [...head, ...kept, '', names, ...tail].join('\n'), hidden }
 }
 
-const plural = (n: number, word: string) => `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`
+async function recordUse($: EngineInterface, cwd: string, skill: string) {
+  if (!cwd) return
+  const memory = await recall($)
+  const saved = { ...EMPTY_PROJECT, ...memory.projects[cwd] }
+  if (saved.lastUsed[skill] === saved.sessions) return
+  saved.lastUsed[skill] = saved.sessions
+  memory.projects[cwd] = saved
+  await remember($, memory)
+}
+
+const plural =(n: number, word: string) => `${n.toLocaleString('en-US')} ${word}${n === 1 ? '' : 's'}`
 
 export const register: Register = on => {
   // This session's project, its frozen view of usage, and what the listing lost.
@@ -127,9 +137,9 @@ export const register: Register = on => {
     if (unseen.length) {
       const memory = await recall($)
       const saved = { ...EMPTY_PROJECT, ...memory.projects[cwd] }
+      // The first listing the mod sees in this project holds skills that were there before it: they count as old.
+      const seen = Object.keys(saved.firstSeen).length === 0 ? 0 : project.sessions
       for (const name of unseen) {
-        // Skills there before the mod's first session in this project count as old.
-        const seen = project.sessions === 1 ? 0 : project.sessions
         project.firstSeen[name] = seen
         saved.firstSeen[name] ??= seen
       }
@@ -144,17 +154,23 @@ export const register: Register = on => {
     return { text: rewritten.text }
   })
 
-  // Typed as /name, called through the Skill tool or preloaded into a subagent: all count as a use.
-  on('skill.prompt', async ($, e, next) => {
-    if (cwd) {
-      const memory = await recall($)
-      const saved = { ...EMPTY_PROJECT, ...memory.projects[cwd] }
-      if (saved.lastUsed[e.skill] !== saved.sessions) {
-        saved.lastUsed[e.skill] = saved.sessions
-        memory.projects[cwd] = saved
-        await remember($, memory)
-      }
+  // Called through the Skill tool, typed as /name, or preloaded into a subagent: all count as a use.
+  // Claude Code's own security plugin can keep skill.prompt from user plugins, so the first two are read where they start.
+  on('tool.call', { tool: 'Skill' }, async ($, e, next) => {
+    if (e.tool === 'Skill' && typeof e.skill === 'string') await recordUse($, cwd, e.skill)
+    return next(e)
+  })
+
+  on('prompt.submit', async ($, e, next) => {
+    const typed = /^\/(\S+)/.exec(e.text.trim())?.[1]
+    if (typed && (project.firstSeen[typed] !== undefined || Object.keys(project.firstSeen).some(name => bare(name) === typed))) {
+      await recordUse($, cwd, typed)
     }
+    return next(e)
+  })
+
+  on('skill.prompt', async ($, e, next) => {
+    await recordUse($, cwd, e.skill)
     return next(e)
   })
 

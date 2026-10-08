@@ -26,6 +26,7 @@ Fourteen small [mods](https://code.claude.com/docs/en/plugins/mods/overview) tha
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
 
 - With **tool-diet**, every request in a fresh session was **15,954 tokens smaller (−36%)**: 43,859 → 27,905, as the API reported. [Details](#tool-diet).
+- With **skill-diet** on top of the other mods, every request in a fresh session was **8,226 tokens smaller (−30%)**: 27,423 → 19,197, as the API reported. [Details](#skill-diet).
 - In the [benchmark](#benchmark), a debugging task cost **33% less** with output-diet and reread-guard on, averaged over three runs each.
 
 ## Install
@@ -79,7 +80,17 @@ On that setup, the largest tool moved was `Artifact`, whose description alone is
 
 Every request carries the skill listing: each installed skill's name and its whole description. With a few plugins installed that is dozens of skills, most of which a given project never uses (video skills in a backend repo, document skills in a game). skill-diet keeps the skills you used lately in this project listed in full and lists the rest on one line by name only. The Skill tool still loads any of them, and typing `/name` still works.
 
-- A skill used in this project in one of your last five sessions stays listed in full. Every use counts: typed as `/name`, called by Claude, or preloaded into a subagent.
+Measured with one prompt, "Reply with just OK.", in a fresh session with 45 skills installed and the other mods on, as the API reported the request:
+
+| | Prompt tokens per request |
+| --- | ---: |
+| Without skill-diet | 27,423 |
+| With skill-diet | 19,197 |
+| **Change** | **−8,226 (−30%)** |
+
+In the same setup, asked to fill in a PDF form, Claude found `anthropic-skills:pdf` from its name alone and loaded it with the Skill tool. What moves depends on your skills; `/xray` shows yours.
+
+- A skill used in this project in one of your last five sessions stays listed in full. Every use counts: typed as `/name` or called by Claude through the Skill tool.
 - Usage is kept per project folder, so a skill you use in one repo does not crowd the listing in another.
 - A skill installed after skill-diet stays listed in full for five sessions, so Claude can find it before you have used it.
 - The listing is decided once per session, so the prompt cache is never disturbed mid-session. Changes apply from the next session.
