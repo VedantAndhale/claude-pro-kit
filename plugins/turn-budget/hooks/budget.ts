@@ -88,4 +88,4 @@ export const parse = (args: string, limits: Limits): Limits | undefined => {
 export const describeLimits = (limits: Limits) =>
   limits.isOff
     ? 'Turn budget is off. /turn-budget on to turn it back on.'
-    : `Turn budget: at +${limits.points} session points or ${n(limits.tokens)} uncached input tokens in one turn, it ${limits.onLimit === 'handoff' ? 'hands off to a fresh session by itself' : 'asks first'}. /turn-budget <points> · tokens <n> · handoff|ask · off`
+    : `Turn budget: at +${limits.points} session points or ${n(limits.tokens)} uncached input tokens in one turn, it ${limits.onLimit === 'handoff' ? 'writes a handoff for a new session by itself' : 'asks first'}. /turn-budget <points> · tokens <n> · handoff|ask · off`

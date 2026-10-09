@@ -1,7 +1,7 @@
 {
   "name": "turn-budget",
-  "version": "0.3.0",
-  "description": "When one turn uses more than +5 session points or 500,000 uncached input tokens, writes a handoff from exact session data and continues in a fresh session by itself. No model calls.",
+  "version": "0.4.0",
+  "description": "When one turn uses more than +5 session points or 500,000 uncached input tokens, writes a handoff from exact session data and copies it for a new session; the old session is never cleared. No model calls.",
   "author": {
     "name": "Vedant Andhale",
     "url": "https://github.com/VedantAndhale"

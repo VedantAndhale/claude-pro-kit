@@ -84,23 +84,16 @@ async function handOff($: EngineInterface, turnId: string | undefined, reason: s
   if (turnId) await $.turn.abort({ turnId }).catch(() => undefined)
   $.ui.status(undefined)
 
-  // After this hook returns: a clear and a new prompt cannot start inside it.
-  $.clock.after(300, async () => {
-    const message = continueMessage(doc, path)
-    const cleared = await $.command
-      .run({ command: 'clear' })
-      .then(() => true)
-      .catch(() => false)
-    if (cleared) {
-      tracked.files = {}
-      tracked.todos = []
-      await $.prompt.submit({ text: message })
-      $.ui.toast(`Fresh session started from a handoff. The old conversation is in /resume. Handoff: ${path}`, { timeoutMs: 15_000 })
-    } else {
-      await $.prompt.fill({ text: message, mode: 'replace' }).catch(() => undefined)
-      $.ui.toast(`Handoff written (${path}) and placed in the prompt box. Run /clear, then send it.`, { timeoutMs: 15_000 })
-    }
-  })
+  // The old session is left as it is: no /clear. A mod cannot open a new thread,
+  // so the first message of the new one goes on the clipboard.
+  const message = continueMessage(doc, path)
+  const { isCopied } = await $.ui.copy({ text: message }).catch(() => ({ isCopied: false }))
+  $.ui.toast(
+    isCopied
+      ? `Handoff copied. Open a new session and paste it; this one stays as it is. Handoff: ${path}`
+      : `Handoff written (${path}). Open a new session and ask it to continue from that file; this one stays as it is.`,
+    { timeoutMs: 15_000 },
+  )
 }
 
 // Resolves true to go on, false when the person chose to stop.
@@ -166,7 +159,7 @@ export const register: Register = on => {
 
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'turn-budget', description: 'Turn budget: /turn-budget · <points> · tokens <n> · handoff|ask · off|on' })
-    await $.command.register({ name: 'handoff', description: 'Write a handoff from this session (no model call) and continue in a fresh session' })
+    await $.command.register({ name: 'handoff', description: 'Write a handoff from this session (no model call) and copy it for a new session; this one is kept' })
     return next(e)
   })
 

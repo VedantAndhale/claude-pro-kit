@@ -161,7 +161,7 @@ describe('the handoff document', () => {
 })
 
 describe('turn-budget', () => {
-  test('handoff mode (the default): at the limit, no question; the turn stops, a handoff is written, the chat is cleared and continues', async ($, on) => {
+  test('handoff mode (the default): at the limit, no question; the turn stops, a handoff is written and copied, the session is not cleared', async ($, on) => {
     const sent = engine(on, 'Continue', 'handoff')
     const written: string[] = []
     const ran: string[] = []
@@ -174,7 +174,6 @@ describe('turn-budget', () => {
     on('process.run', () => ({ value: { exitCode: 0, stdout: ' M mailer.ts\n', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }) as never)
     on('env.get', () => ({ value: '/home/dev/.claude' }))
     on('clock.now', () => ({ value: Date.parse('2026-10-08T10:00:00Z') }))
-    on('clock.after', () => ({ value: undefined }))
     on('command.run', { command: 'clear' }, () => {
       ran.push('clear')
       return {}
@@ -182,6 +181,10 @@ describe('turn-budget', () => {
     on('prompt.submit', ($, e) => {
       ran.push(`submit:${e.text.slice(0, 42)}`)
       return { text: e.text } as never
+    })
+    on('ui.copy', ($, e) => {
+      ran.push(`copy:${e.text.slice(0, 42)}`)
+      return { value: { isCopied: true } } as never
     })
     await $.session.measure(reading(20))
     await $.turn.start({ text: 'go', turnId: 't1' })
@@ -193,9 +196,9 @@ describe('turn-budget', () => {
     expect(sent.aborted).toEqual(['t1'])
     expect(written[0]).toContain('1 (latest). add retries')
     expect(written[0]).toContain(' M mailer.ts')
-    // The clear and the new prompt run just after the hook, on their own.
-    for (let i = 0; i < 100 && ran.length < 2; i++) await new Promise(r => setTimeout(r, 10))
-    expect(ran).toEqual(['clear', 'submit:Continue the work from my previous session'])
+    // The old session is kept: nothing clears it or sends into it.
+    expect(ran).toEqual(['copy:Continue the work from my previous session'])
+    expect(sent.toasts.at(-1)).toContain('Handoff copied')
   })
 
   test('does not ask while under the limit', async ($, on) => {
