@@ -5,8 +5,8 @@
     "url": "https://github.com/VedantAndhale"
   },
   "metadata": {
-    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, quiet flags on noisy commands, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, a local status pane for background tasks, exact facts kept after a compaction, the right GitHub account per repository, update notices, and an Improve button for prompts. Only prompt-polish calls a model, once per press; the other mods spend no tokens themselves.",
-    "version": "0.14.3"
+    "description": "Make the Claude Pro plan last longer: exact usage HUD, a per-turn session receipt, a context breakdown, a usage limit guard, fewer tools and skill descriptions loaded per request, search subagents on Haiku, shorter shell output, quiet flags on noisy commands, capped and repeat file reads, edits in place of full-file rewrites, no reruns of a command that keeps failing, a prompt-cache countdown, a local status pane for background tasks, exact facts kept after a compaction, the right GitHub account per repository, update notices, an Improve button for prompts, and /nudge for behavioral design. Only prompt-polish calls a model, once per press; the other mods spend no tokens themselves.",
+    "version": "0.15.0"
   },
   "plugins": [
     {
@@ -24,8 +24,8 @@
     {
       "name": "turn-budget",
       "source": "./plugins/turn-budget",
-      "description": "When one turn crosses +5 session points, writes a handoff with your latest prompt in full and continues in a fresh session by itself; /handoff any time.",
-      "version": "0.3.0"
+      "description": "When one turn crosses +5 session points, writes a handoff with your latest prompt in full and copies it for a new session; the old session is never cleared. /handoff any time.",
+      "version": "0.4.0"
     },
     {
       "name": "tool-diet",
@@ -140,6 +140,12 @@
       "source": "./plugins/prompt-polish",
       "description": "An Improve button above the prompt (and /polish) rewrites your draft with Opus at low effort (or Haiku or Sonnet) using the prompt-master rules and puts it back in the box, never sent; each press is one model call, with its exact tokens shown.",
       "version": "0.1.3"
+    },
+    {
+      "name": "nudge",
+      "source": "./plugins/nudge",
+      "description": "/nudge <goal> applies behavioral design to a product or flow: diagnoses why users don't act, designs interventions that remove barriers, ranks hypotheses to test, and checks every idea for ethics. Its guide reaches Claude only when you run /nudge.",
+      "version": "0.1.0"
     }
   ]
 }

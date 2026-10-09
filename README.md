@@ -4,7 +4,7 @@
 
 Make the $20 Claude Pro plan last longer in Claude Code.
 
-Twenty-two small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. One mod makes a model call: prompt-polish, once each time you press Improve, and never on its own. The others make none. None adds anything to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation; compact-keeper adds a note of at most 4,000 characters after a compaction): every figure on screen is one Claude Code already reports, or a time the mod measured.
+Twenty-three small [mods](https://code.claude.com/docs/en/plugins/mods/overview) that show you exactly where your usage goes and cut the waste. One mod makes a model call: prompt-polish, once each time you press Improve, and never on its own. The others make none. None adds anything to the system prompt (read-cap adds one tool, which Claude Code lists by name only until Claude first uses it; write-guard adds one line to a tool result at most once per conversation; compact-keeper adds a note of at most 4,000 characters after a compaction; nudge adds its 5,344-character guide only when you run `/nudge`): every figure on screen is one Claude Code already reports, or a time the mod measured.
 
 | Mod | What it does | Where |
 | --- | --- | --- |
@@ -24,11 +24,12 @@ Twenty-two small [mods](https://code.claude.com/docs/en/plugins/mods/overview) t
 | **session-receipt** | `/receipt` opens a pane with the exact tokens every turn of the session spent, and the costliest turns | Everywhere |
 | **peek** | Typing `status` while background tasks run opens a pane with each one's exact elapsed time and last output lines, instead of sending the prompt to Claude | Everywhere |
 | **budget-guard** | Holds a prompt back once your 5-hour or weekly usage reaches your limit (90% by default); sending it again goes through | Everywhere |
-| **turn-budget** | When one turn uses more than +5 session points, writes a handoff and continues in a fresh session by itself; `/handoff` any time | Everywhere |
+| **turn-budget** | When one turn uses more than +5 session points, writes a handoff and copies it for a new session, leaving the old one as it is; `/handoff` any time | Everywhere |
 | **compact-keeper** | After a compaction, adds a note of exact facts from before it: your latest prompt in full, the todo list, the last failed command, files edited | Everywhere |
 | **collision-guard** | Asks before Claude edits a file another chat on this machine changed in the last 30 minutes | Everywhere |
 | **answer-pane** | Explain, plan and ELI5 pages drawn natively in a side pane; plans have decision buttons and Respond fills the prompt box | Desktop app (no diagrams in the terminal) |
 | **prompt-polish** | An Improve button beside Send (above the prompt in the terminal) rewrites your draft with Opus at low effort and puts it back in the box; Undo restores it. One model call per press | Everywhere |
+| **nudge** | `/nudge <goal>` applies behavioral design to a product or flow: why users don't act, interventions that remove the barriers, hypotheses to test, and an ethics check on every idea | Everywhere |
 | **kit-updates** | Tells you when an installed mod from this kit has a newer version or a new mod joins the kit; `/kit-update` installs updates and new mods | Everywhere |
 
 ![pro-hud's band updating live while Claude works](docs/pro-hud-live.gif)
@@ -345,12 +346,12 @@ Sending the same message again goes through, so nothing is ever blocked for good
 
 budget-guard looks at your session before a turn starts. turn-budget watches one turn while it runs, because a long agentic turn can quietly use a big share of your session between two of your messages. It checks before each model request in a turn, subagents' included.
 
-**At the limit, it hands off to a fresh session by itself** (the default):
+**At the limit, it writes a handoff by itself** (the default):
 
 1. The turn stops before the next request. A running command is never cut off.
 2. It writes a handoff from exact session data, with no model call: your last prompts (the latest in full, with its line breaks; earlier ones shortened), the todo list, the files Claude edited, `git status --short`, `git diff --stat`, and the last thing Claude said. It's saved under `~/.claude/handoffs/`.
-3. It clears the chat and sends the handoff as the first message of the fresh session, so Claude carries on with a few thousand tokens of context instead of re-sending the whole old conversation on every request.
-4. A toast tells you it happened. The old conversation stays in `/resume`.
+3. It copies the handoff to the clipboard as the first message for a new session. Open a new session and paste it, so Claude carries on with a few thousand tokens of context instead of re-sending the whole old conversation on every request.
+4. The old session is never cleared: it stays in its own thread, as it was. A toast tells you the handoff is copied and where it's saved.
 
 The handoff never touches your repository: it is saved outside it, under `~/.claude/handoffs/`, and git is only read (`git status --short`, `git diff --stat`), never written to. Nothing is staged, committed or added to your project.
 
@@ -443,6 +444,20 @@ Improve sends the draft to Opus at low effort with a bundled copy of the [prompt
 - A toast shows the call's exact tokens as the API reported them.
 
 `/polish model haiku|sonnet|opus` picks the model; the toast names the one used. One measured press on Opus at low effort: 13,790 input tokens and 73 output tokens, answered in 2.2 s. Most of the input is the prompt-master rules. These calls count toward your plan's usage limits like any other request on that model; Haiku is the cheaper choice if you press often.
+
+## nudge
+
+`/nudge <what users are not doing>` turns Claude into a behavioral design partner for that one question. For example: `/nudge free trial users rarely connect their calendar on day one`.
+
+Claude then:
+
+- restates the goal as one observable behavior (who does what, when);
+- walks the path to it step by step and names the barriers where people drop off (friction, uncertainty, cognitive load, low or delayed value, a missing prompt, social risk, habit), marking each as evidenced or assumed;
+- proposes two to five interventions, each tied to a barrier, preferring to remove barriers over adding pressure;
+- writes them as ranked, testable hypotheses with a metric and a guardrail;
+- runs an ethics check on every idea: does the user benefit, would it survive being explained openly, can they undo it as easily as they opted in, is every claim true, and is it free of dark patterns such as confirmshaming, fake urgency or hard cancellation.
+
+`/nudge` with nothing after it loads the guide for your next message. The guide (`hooks/guide.md`, 5,344 characters) reaches Claude only as a note beside the command, so sessions that never run `/nudge` spend nothing on it. It is written for this kit from public frameworks (ability, motivation and prompts; COM-B; choice architecture), inspired by [rastian/behavioral-design-skills](https://github.com/rastian/behavioral-design-skills); no text is copied from it.
 
 ## kit-updates
 
