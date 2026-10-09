@@ -1,0 +1,6 @@
+{
+  "name": "nudge",
+  "version": "0.1.0",
+  "description": "/nudge <goal> applies behavioral design to a product or flow: diagnose why users don't act, design interventions that remove barriers, ranked hypotheses to test, and an ethics check on every answer. Its guide reaches Claude only when you run /nudge.",
+  "author": { "name": "Vedant Andhale", "url": "https://github.com/VedantAndhale" }
+}
